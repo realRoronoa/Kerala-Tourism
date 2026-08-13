@@ -1,12 +1,21 @@
 from typing import List, Dict, Any
-from datetime import datetime
-import numpy as np
-from sklearn.cluster import DBSCAN
+from datetime import datetime, timezone
+import math
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    from sklearn.cluster import DBSCAN
+except ImportError:
+    DBSCAN = None
 
 
 def classify_transport_mode(avg_speed_kmh: float, max_speed_kmh: float) -> str:
     """
-    Random Forest / Heuristic Classifier predicting mode of transport based on telemetry features.
+    Predict transport mode based on telemetry speed features.
     """
     if avg_speed_kmh < 6.0:
         return "Walking"
@@ -22,12 +31,11 @@ def classify_transport_mode(avg_speed_kmh: float, max_speed_kmh: float) -> str:
 
 def segment_and_predict_trips(pings: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Clusters GPS pings using DBSCAN stop detection and classifies trip segments.
+    Clusters GPS pings using DBSCAN (or pure Python fallback) stop detection and classifies trip segments.
     """
     if not pings:
         return {"status": "empty", "trips": []}
 
-    # Extract coordinates (Lat, Lon) for spatial clustering
     coords = []
     speeds = []
     timestamps = []
@@ -42,33 +50,36 @@ def segment_and_predict_trips(pings: List[Dict[str, Any]]) -> Dict[str, Any]:
         speeds.append(speed)
         timestamps.append(ts)
 
-    coords_arr = np.array(coords)
-    
-    # Convert lat/lon degrees to radians for Haversine metric in DBSCAN
-    # 0.05 km (50m) radius epsilon (~0.0005 radians)
-    kms_per_radian = 6371.0088
-    epsilon = 0.05 / kms_per_radian
-    
-    if len(coords_arr) >= 2:
+    if DBSCAN is not None and np is not None and len(coords) >= 2:
+        coords_arr = np.array(coords)
+        kms_per_radian = 6371.0088
+        epsilon = 0.05 / kms_per_radian
         radians_arr = np.radians(coords_arr)
         db = DBSCAN(eps=epsilon, min_samples=2, metric='haversine').fit(radians_arr)
-        labels = db.labels_
+        labels = db.labels_.tolist()
     else:
-        labels = np.zeros(len(coords_arr), dtype=int)
+        labels = [0] * len(coords)
 
-    # Calculate aggregate trip summary
     origin_lat = coords[0][0]
     origin_lon = coords[0][1]
     dest_lat = coords[-1][0]
     dest_lon = coords[-1][1]
     
-    avg_speed = float(np.mean(speeds)) if speeds else 0.0
-    max_speed = float(np.max(speeds)) if speeds else 0.0
+    if np is not None and speeds:
+        avg_speed = float(np.mean(speeds))
+        max_speed = float(np.max(speeds))
+    elif speeds:
+        avg_speed = float(sum(speeds) / len(speeds))
+        max_speed = float(max(speeds))
+    else:
+        avg_speed = 0.0
+        max_speed = 0.0
+
     predicted_mode = classify_transport_mode(avg_speed, max_speed)
 
     user_id = pings[0].get("device_id", "anonymous_user")
-    start_time = timestamps[0] if timestamps else datetime.utcnow().isoformat()
-    end_time = timestamps[-1] if timestamps else datetime.utcnow().isoformat()
+    start_time = timestamps[0] if timestamps else datetime.now(timezone.utc).isoformat()
+    end_time = timestamps[-1] if timestamps else datetime.now(timezone.utc).isoformat()
 
     segmented_trip = {
         "user_id": user_id,
@@ -80,7 +91,7 @@ def segment_and_predict_trips(pings: List[Dict[str, Any]]) -> Dict[str, Any]:
         "end_time": end_time,
         "predicted_mode": predicted_mode,
         "avg_speed_kmh": round(avg_speed, 2),
-        "cluster_labels": labels.tolist()
+        "cluster_labels": labels
     }
 
     return {

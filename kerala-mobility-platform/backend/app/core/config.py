@@ -1,4 +1,10 @@
-from pydantic_settings import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    try:
+        from pydantic.v1 import BaseSettings  # type: ignore
+    except ImportError:
+        from pydantic import BaseModel as BaseSettings  # type: ignore
 
 
 class Settings(BaseSettings):

@@ -1,8 +1,12 @@
 import json
 from typing import List, Dict, Any, Optional
-import redis.asyncio as aioredis
 from app.core.config import settings
 from app.services.ml_client import segment_stops
+
+try:
+    import redis.asyncio as aioredis
+except ImportError:
+    aioredis = None
 
 QUEUE_KEY = "gps_telemetry_queue"
 
@@ -12,6 +16,10 @@ async def process_telemetry_queue(batch_size: int = 100) -> Optional[Dict[str, A
     Background processor function that connects to Redis, pulls a batch of
     GPS pings from 'gps_telemetry_queue', formats them, and calls ml_client.
     """
+    if aioredis is None:
+        print("[Telemetry Worker Warning] redis library not installed. Skipping queue processing.")
+        return None
+
     redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     try:
         # Retrieve raw ping strings from Redis list queue
