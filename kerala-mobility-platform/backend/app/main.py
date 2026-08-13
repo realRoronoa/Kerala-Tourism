@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.connection import engine, Base
 from app.models.trip import Trip  # Ensure models are registered in metadata
-from app.api.routes import location, trips
+from app.api.routes import location, trips, analytics
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.add_middleware(
 # Mount Routers
 app.include_router(location.router, prefix="/api/v1/location", tags=["Location"])
 app.include_router(trips.router, prefix="/api/v1/trips", tags=["Trips"])
+app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
 
 
 @app.get("/")
