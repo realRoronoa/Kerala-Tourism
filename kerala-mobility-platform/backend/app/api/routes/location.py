@@ -3,7 +3,7 @@ from app.core.config import settings
 from app.schemas.trip import GPSPingSchema
 
 try:
-    import redis.asyncio as aioredis
+    import redis.asyncio as aioredis  # type: ignore # pyrefly: ignore [missing-import]
 except ImportError:
     aioredis = None
 

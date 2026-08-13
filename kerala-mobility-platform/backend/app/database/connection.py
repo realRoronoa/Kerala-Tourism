@@ -2,8 +2,8 @@ from typing import Generator
 from app.core.config import settings
 
 try:
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker, DeclarativeBase
+    from sqlalchemy import create_engine  # type: ignore # pyrefly: ignore [missing-import]
+    from sqlalchemy.orm import sessionmaker, DeclarativeBase  # type: ignore # pyrefly: ignore [missing-import]
 
     engine = create_engine(
         settings.DATABASE_URL,

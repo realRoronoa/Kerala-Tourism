@@ -4,8 +4,8 @@ from app.api.deps import get_db
 from app.models.trip import Trip
 
 try:
-    from sqlalchemy.orm import Session
-    from sqlalchemy import select, func
+    from sqlalchemy.orm import Session  # type: ignore # pyrefly: ignore [missing-import]
+    from sqlalchemy import select, func  # type: ignore # pyrefly: ignore [missing-import]
 except ImportError:
     Session = None  # type: ignore
     select = None  # type: ignore

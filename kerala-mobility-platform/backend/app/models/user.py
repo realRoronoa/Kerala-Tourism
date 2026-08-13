@@ -3,8 +3,8 @@ from typing import Optional
 from app.database.connection import Base
 
 try:
-    from sqlalchemy import String, DateTime, Boolean, Integer
-    from sqlalchemy.orm import Mapped, mapped_column
+    from sqlalchemy import String, DateTime, Boolean, Integer  # type: ignore # pyrefly: ignore [missing-import]
+    from sqlalchemy.orm import Mapped, mapped_column  # type: ignore # pyrefly: ignore [missing-import]
 
     class User(Base):  # type: ignore
         __tablename__ = "users"

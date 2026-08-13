@@ -5,8 +5,8 @@ from app.models.trip import Trip
 from app.schemas.trip import TripResponseSchema, TripVerifySchema
 
 try:
-    from sqlalchemy.orm import Session
-    from sqlalchemy import select
+    from sqlalchemy.orm import Session  # type: ignore # pyrefly: ignore [missing-import]
+    from sqlalchemy import select  # type: ignore # pyrefly: ignore [missing-import]
 except ImportError:
     Session = None  # type: ignore
     select = None  # type: ignore
@@ -34,7 +34,7 @@ def verify_trip(payload: TripVerifySchema, db: Session = Depends(get_db)):
     """
     if db is None or select is None:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=status.HTTP_533_SERVICE_UNAVAILABLE if hasattr(status, "HTTP_533_SERVICE_UNAVAILABLE") else 503,
             detail="Database session unavailable."
         )
 
