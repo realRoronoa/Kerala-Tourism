@@ -1,0 +1,134 @@
+[
+  {
+    "id": "spot_001",
+    "name": "Fort Kochi Beach",
+    "category": ["beach", "heritage", "culture"],
+    "description": "A serene historic beach town in Kochi with Portuguese-era colonial architecture, Chinese fishing nets, art galleries, and calm Arabian Sea shores. Ideal for heritage walks, street food, and peaceful sunset views away from city crowds.",
+    "lat": 9.9658,
+    "lon": 76.2431,
+    "district": "Ernakulam",
+    "best_time": "October to March",
+    "crowd_level": "moderate"
+  },
+  {
+    "id": "spot_002",
+    "name": "Munnar Tea Gardens",
+    "category": ["nature", "mountains", "hills", "adventure"],
+    "description": "Sprawling high-altitude tea estates blanketing the Western Ghats hills at 1600m elevation. Misty green valleys, rolling plantations, cool climate, and panoramic mountain views. Perfect for trekking, nature photography, and escaping the summer heat.",
+    "lat": 10.0889,
+    "lon": 77.0595,
+    "district": "Idukki",
+    "best_time": "September to May",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_003",
+    "name": "Alleppey Backwaters",
+    "category": ["backwaters", "nature", "peaceful", "houseboat"],
+    "description": "A vast tranquil network of interconnected lagoons, canals, and lakes stretching across the coastal lowlands. Houseboat cruises glide past rice paddies, coconut groves, and village life. The 'Venice of the East' — ideal for slow travel and relaxation.",
+    "lat": 9.4981,
+    "lon": 76.3388,
+    "district": "Alappuzha",
+    "best_time": "November to February",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_004",
+    "name": "Wayanad Wildlife Sanctuary",
+    "category": ["wildlife", "nature", "forest", "adventure"],
+    "description": "Lush tropical rainforests sheltering elephants, leopards, gaur, and rare birds inside a protected reserve. Jeep safaris at dawn, tribal heritage villages, ancient Edakkal Caves with prehistoric carvings, and dense misty forests throughout.",
+    "lat": 11.6854,
+    "lon": 76.1320,
+    "district": "Wayanad",
+    "best_time": "October to May",
+    "crowd_level": "moderate"
+  },
+  {
+    "id": "spot_005",
+    "name": "Varkala Cliff Beach",
+    "category": ["beach", "adventure", "peaceful", "nature"],
+    "description": "Dramatic red laterite cliffs rising 30 metres directly above the Arabian Sea with mineral spring waterfalls flowing onto the beach. Less crowded than Kovalam, with yoga retreats, cliff-side cafes, paragliding, and a relaxed backpacker atmosphere.",
+    "lat": 8.7333,
+    "lon": 76.7019,
+    "district": "Thiruvananthapuram",
+    "best_time": "November to March",
+    "crowd_level": "low"
+  },
+  {
+    "id": "spot_006",
+    "name": "Periyar Tiger Reserve",
+    "category": ["wildlife", "nature", "adventure", "forest"],
+    "description": "Premier wildlife sanctuary centred around Periyar Lake where elephants, tigers, and sambar deer gather at the water's edge. Bamboo rafting, border hiking with tribal guides, and spice plantation tours through cardamom and pepper hills.",
+    "lat": 9.4601,
+    "lon": 77.1694,
+    "district": "Idukki",
+    "best_time": "October to June",
+    "crowd_level": "moderate"
+  },
+  {
+    "id": "spot_007",
+    "name": "Kovalam Beach",
+    "category": ["beach", "relaxation", "water sports"],
+    "description": "Kerala's most famous crescent-shaped beach with a lighthouse perched on the southern headland. Calm turquoise waters, Ayurvedic spa resorts, seafood restaurants, and surfing lessons. Popular international tourist destination with vibrant beach life.",
+    "lat": 8.3988,
+    "lon": 76.9782,
+    "district": "Thiruvananthapuram",
+    "best_time": "September to March",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_008",
+    "name": "Silent Valley National Park",
+    "category": ["nature", "forest", "wildlife", "peaceful"],
+    "description": "One of India's last undisturbed tropical rainforests and a UNESCO heritage site. No vehicle access, only guided treks through dense shola forests home to lion-tailed macaques, hornbills, and rare orchids. A true silent wilderness experience.",
+    "lat": 11.0781,
+    "lon": 76.4389,
+    "district": "Palakkad",
+    "best_time": "December to April",
+    "crowd_level": "low"
+  },
+  {
+    "id": "spot_009",
+    "name": "Bekal Fort",
+    "category": ["heritage", "beach", "culture", "history"],
+    "description": "The largest and best-preserved fort in Kerala, rising dramatically from a rocky promontory where the Arabian Sea meets the Malabar coast. 360-degree sea views, a keyhole-shaped observation tower, and an adjacent palm-lined beach. Quiet and uncrowded.",
+    "lat": 12.3927,
+    "lon": 75.0356,
+    "district": "Kasaragod",
+    "best_time": "October to February",
+    "crowd_level": "low"
+  },
+  {
+    "id": "spot_010",
+    "name": "Athirappilly Waterfalls",
+    "category": ["nature", "waterfall", "adventure", "trekking"],
+    "description": "Kerala's largest and most spectacular waterfall, 80 feet wide and 80 feet tall, crashing through thick Sholayar rainforest — the filming location of many Bollywood and Malayalam blockbusters. The gateway to Vazhachal forest with elephant corridors.",
+    "lat": 10.2836,
+    "lon": 76.5696,
+    "district": "Thrissur",
+    "best_time": "June to January",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_011",
+    "name": "Kumarakom Bird Sanctuary",
+    "category": ["wildlife", "birds", "backwaters", "peaceful"],
+    "description": "A tranquil bird sanctuary on the banks of Vembanad Lake, home to migratory birds from Siberia and local species like egrets, herons, and kingfishers. Early morning canoe rides through the reed-lined channels offer exceptional birdwatching in complete silence.",
+    "lat": 9.6102,
+    "lon": 76.4323,
+    "district": "Kottayam",
+    "best_time": "November to February",
+    "crowd_level": "low"
+  },
+  {
+    "id": "spot_012",
+    "name": "Thrissur Pooram Festival Grounds",
+    "category": ["culture", "festival", "heritage", "food"],
+    "description": "The epicentre of Kerala's grandest temple festival — Thrissur Pooram. Massive caparisoned elephants, traditional percussion ensembles, and fireworks displays at the Vadakkunnathan Temple. An overwhelming sensory immersion into authentic Kerala culture.",
+    "lat": 10.5276,
+    "lon": 76.2144,
+    "district": "Thrissur",
+    "best_time": "April to May (festival season)",
+    "crowd_level": "very high"
+  }
+]

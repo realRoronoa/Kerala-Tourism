@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # Primary Database: PostgreSQL 15 + PostGIS & pgvector
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: kerala_mobility_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: kerala_mobility
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # High-Frequency Telemetry Ingestion Queue & Cache: Redis
+  redis:
+    image: redis:7-alpine
+    container_name: kerala_mobility_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Core API Server: FastAPI
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kerala_mobility_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=Kerala Mobility Platform
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/kerala_mobility
+      - REDIS_URL=redis://redis:6379/0
+      - ML_SERVICE_URL=http://ml_service:8001
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Decoupled Machine Learning Microservice (DBSCAN & Random Forest)
+  ml_service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    container_name: kerala_mobility_ml
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+
+volumes:
+  postgres_data:
+  redis_data:
