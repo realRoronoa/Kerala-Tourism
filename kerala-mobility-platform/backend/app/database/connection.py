@@ -3,10 +3,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from app.core.config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True
-)
+db_url = settings.DATABASE_URL
+
+# Support both PostgreSQL and instant zero-setup SQLite fallback
+connect_args = {}
+if db_url.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+    engine = create_engine(db_url, connect_args=connect_args)
+else:
+    try:
+        engine = create_engine(db_url, pool_pre_ping=True)
+    except Exception:
+        db_url = "sqlite:///./kerala_mobility.db"
+        engine = create_engine(db_url, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
