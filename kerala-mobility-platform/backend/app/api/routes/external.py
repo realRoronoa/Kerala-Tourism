@@ -17,6 +17,17 @@ async def reverse_geocode(
     return await ExternalAPIService.reverse_geocode(lat, lon)
 
 
+@router.get("/search-location")
+async def search_location(
+    query: str = Query(..., description="Search query string (e.g. 'Varkala Beach', 'Munnar')")
+) -> Dict[str, Any]:
+    """
+    Searches for place names in Kerala and returns (lat, lon) coordinates and matching location details.
+    """
+    return await ExternalAPIService.search_location(query)
+
+
+
 @router.get("/route")
 async def get_road_route(
     origin_lat: float = Query(..., description="Origin latitude"),

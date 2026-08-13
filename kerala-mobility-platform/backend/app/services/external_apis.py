@@ -98,6 +98,68 @@ class ExternalAPIService:
         }
 
     @classmethod
+    async def search_location(cls, query: str) -> Dict[str, Any]:
+        """
+        Forward geocodes a place name query (e.g., 'Varkala Beach', 'Munnar') into lat/lon coordinates
+        using OpenStreetMap Nominatim API with Redis caching.
+        """
+        cache_key = f"cache:search:{query.lower().strip()}"
+        redis_client = await cls._get_redis_client()
+
+        if redis_client:
+            try:
+                cached = await redis_client.get(cache_key)
+                if cached:
+                    await redis_client.aclose()
+                    return json.loads(cached)
+            except Exception:
+                pass
+
+        url = f"https://nominatim.openstreetmap.org/search?q={query},+Kerala,+India&format=json&limit=5&addressdetails=1"
+        headers = {"User-Agent": "Kerala-Mobility-Platform/1.0 (natpac.kerala.gov.in)"}
+
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            try:
+                res = await client.get(url, headers=headers)
+                if res.status_code == 200:
+                    data = res.json()
+                    results = []
+                    for item in data:
+                        results.append({
+                            "display_name": item.get("display_name"),
+                            "lat": float(item.get("lat", 0)),
+                            "lon": float(item.get("lon", 0)),
+                            "type": item.get("type"),
+                            "importance": item.get("importance")
+                        })
+                    
+                    response_payload = {
+                        "query": query,
+                        "total_results": len(results),
+                        "results": results
+                    }
+
+                    if redis_client:
+                        try:
+                            await redis_client.setex(cache_key, CACHE_TTL_SPATIAL, json.dumps(response_payload))
+                        except Exception:
+                            pass
+
+                    return response_payload
+            except Exception as exc:
+                logger.error(f"Forward geocoding search failed: {exc}")
+
+        if redis_client:
+            await redis_client.aclose()
+
+        return {
+            "query": query,
+            "total_results": 0,
+            "results": []
+        }
+
+
+    @classmethod
     async def get_road_route(
         cls, 
         origin_lat: float, 
