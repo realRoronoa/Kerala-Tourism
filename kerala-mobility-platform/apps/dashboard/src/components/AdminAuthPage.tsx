@@ -15,7 +15,7 @@ const AdminAuthPage: React.FC<AdminAuthPageProps> = ({ onLoginSuccess }) => {
   const [successMsg, setSuccessMsg] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
@@ -24,12 +24,32 @@ const AdminAuthPage: React.FC<AdminAuthPageProps> = ({ onLoginSuccess }) => {
       setErrorMsg('Please enter your Officer Email / ID and Password.');
       return;
     }
+    
     setIsVerifying(true);
     setSuccessMsg('Authenticating credentials...');
-    setTimeout(() => {
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: email, password: password }),
+      });
+
+      if (response.ok) {
+        setIsVerifying(false);
+        onLoginSuccess();
+      } else {
+        setIsVerifying(false);
+        setSuccessMsg('');
+        setErrorMsg('Invalid Government Officer Credentials or Unauthorized Role');
+      }
+    } catch (error) {
       setIsVerifying(false);
-      onLoginSuccess();
-    }, 800);
+      setSuccessMsg('');
+      setErrorMsg('Failed to connect to authentication server.');
+    }
   };
 
   return (
