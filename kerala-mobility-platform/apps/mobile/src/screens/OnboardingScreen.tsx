@@ -176,7 +176,7 @@ export default function OnboardingScreen() {
               </View>
 
               {/* Headline */}
-              <Text className="font-inter-bold text-2xl text-gray-800 text-center mt-12 px-6">
+              <Text className="font-inter-bold text-[19px] text-[#1F2937] text-center mt-12 px-8">
                 {item.title}
               </Text>
             </View>
@@ -187,51 +187,42 @@ export default function OnboardingScreen() {
       {/* Bottom Controls */}
       <View style={{ paddingBottom: Math.max(insets.bottom, 24) }} className="absolute bottom-0 w-full px-6 pt-4 bg-transparent">
         {/* Pagination Dots */}
-        <View className="flex-row justify-center items-center mb-6 gap-2">
+        <View className="flex-row justify-center items-center mb-8 gap-2.5">
           {ONBOARDING_DATA.map((_, index) => {
             const dotStyle = useAnimatedStyle(() => {
-              const width = interpolate(
-                scrollX.value,
-                [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH],
-                [8, 20, 8],
-                Extrapolation.CLAMP
-              );
               const opacity = interpolate(
                 scrollX.value,
                 [(index - 1) * SCREEN_WIDTH, index * SCREEN_WIDTH, (index + 1) * SCREEN_WIDTH],
-                [0.3, 1, 0.3],
+                [0.4, 1, 0.4],
                 Extrapolation.CLAMP
               );
-              return { width, opacity };
+              return { opacity };
             });
 
             return (
               <Animated.View
                 key={`dot-${index}`}
-                style={[dotStyle, { height: 8, borderRadius: 4, backgroundColor: '#0B6E4F' }]}
+                style={[dotStyle, { width: 8, height: 8, borderRadius: 4, backgroundColor: '#1F2937' }]}
               />
             );
           })}
         </View>
 
-        {/* Dynamic CTA Button - Now part of regular layout flow */}
+        {/* Dynamic CTA Button - Matched corner radius to reference */}
         <TouchableOpacity
           onPress={() => handleNext(activeIndex)}
-          className="bg-[#0B6E4F] w-full h-14 rounded-full items-center justify-center flex-row shadow-sm"
+          className="bg-[#0B6E4F] w-full h-12 rounded-xl items-center justify-center flex-row"
           activeOpacity={0.8}
         >
           <Text className="font-inter-bold text-base text-white">
             {isLast ? 'Get Started' : 'Next'}
           </Text>
-          {isLast && (
-            <Feather name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
-          )}
         </TouchableOpacity>
 
-        {/* Skip Link - Clean vertical flow */}
-        <View className="items-center mt-3">
+        {/* Skip Link - Matched reference style */}
+        <View className="items-center mt-4">
           <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} className="py-2 px-6">
-            <Text className="font-inter-medium text-sm text-gray-500">Skip for now</Text>
+            <Text className="font-inter-bold text-[15px] text-[#1F2937]">Skip for now</Text>
           </TouchableOpacity>
         </View>
       </View>
