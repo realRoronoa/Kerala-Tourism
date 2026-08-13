@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
 class UserCreate(BaseModel):
@@ -13,6 +13,10 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
 
 
 class UserResponse(BaseModel):

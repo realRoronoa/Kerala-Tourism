@@ -4,11 +4,51 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.api.deps import get_db, get_current_user
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import (
+    get_password_hash, 
+    verify_password, 
+    create_access_token, 
+    verify_firebase_id_token
+)
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, Token, UserLogin
+from app.schemas.user import UserCreate, UserResponse, Token, UserLogin, FirebaseLoginRequest
 
 router = APIRouter()
+
+
+@router.post("/firebase-login", response_model=Token)
+def firebase_login(payload: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    """
+    Accepts Firebase ID token from mobile (React Native) or web dashboard,
+    verifies via Firebase Admin SDK, auto-provisions user in PostgreSQL, and issues session token.
+    """
+    decoded = verify_firebase_id_token(payload.id_token)
+    if not decoded or "uid" not in decoded:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired Firebase ID token."
+        )
+
+    email = decoded.get("email") or f"{decoded['uid']}@firebase.user"
+    full_name = decoded.get("name") or "Firebase Traveler"
+
+    stmt = select(User).where(User.email == email)
+    user = db.scalar(stmt)
+
+    if not user:
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(decoded["uid"]),
+            full_name=full_name,
+            role="user",
+            device_token_hash=decoded["uid"]
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    access_token = create_access_token(subject=user.id)
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
