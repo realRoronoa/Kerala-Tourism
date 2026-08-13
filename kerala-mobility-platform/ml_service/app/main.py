@@ -5,9 +5,10 @@ NATPAC Kerala Mobility — ML Microservice
 -----------------------------------------
 Endpoints:
 
-  GET  /health                  — liveness check
-  POST /segment-stops           — legacy trip segmentation (Aman's backend uses this)
-  POST /api/ml/analyze-trip     — full pipeline: stops + per-leg mode classification
+  GET  /health                       — liveness check
+  POST /segment-stops                — legacy trip segmentation (Aman's backend uses this)
+  POST /api/ml/analyze-trip          — full pipeline: stops + per-leg mode classification
+  POST /api/ml/generate-itinerary    — RAG + Gemini personalised trip planner
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from pydantic import BaseModel, Field
 
 from app.pipelines.trip_segmentation import detect_stops, segment_and_predict_trips
 from app.pipelines.mode_classifier import classify_mode, DEFAULT_CLASSIFIER
+from app.pipelines.itinerary_generator import generate_trip_plan
 
 logger = logging.getLogger(__name__)
 
@@ -458,3 +460,123 @@ def analyze_trip(request: AnalyzeTripRequest):
             "modes_detected": sorted(set(modes_seen)),
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Itinerary Generation — POST /api/ml/generate-itinerary
+# ---------------------------------------------------------------------------
+
+
+class ItineraryRequest(BaseModel):
+    """Request body for POST /api/ml/generate-itinerary."""
+
+    user_request: str = Field(
+        ...,
+        min_length=5,
+        description=(
+            "Natural-language travel preference. "
+            "E.g. 'peaceful nature trip with wildlife and backwaters'"
+        ),
+    )
+    num_days: int = Field(
+        default=3,
+        ge=1,
+        le=7,
+        description="Number of days in the itinerary (1–7).",
+    )
+    top_k_spots: int = Field(
+        default=6,
+        ge=2,
+        le=12,
+        description="Number of spots to retrieve from the knowledge base.",
+    )
+
+
+@app.post("/api/ml/generate-itinerary")
+def generate_itinerary(request: ItineraryRequest):
+    """Generate a personalised Kerala trip itinerary using RAG + Gemini.
+
+    Flow
+    ----
+    1. Call search_spots(user_request) to retrieve semantically relevant
+       Kerala locations from the ChromaDB knowledge base.
+    2. Inject those verified locations into a Gemini system prompt,
+       grounding the LLM in real coordinates and descriptions.
+    3. Call Gemini (gemini-2.0-flash) with JSON mode enforced.
+    4. Validate the response schema and return the structured itinerary.
+
+    Request Body
+    ------------
+    {
+        "user_request": "peaceful nature trip with wildlife and backwaters",
+        "num_days": 3,
+        "top_k_spots": 6
+    }
+
+    Response Schema
+    ---------------
+    {
+        "itinerary_title": str,
+        "destination":     "Kerala, India",
+        "total_days":      int,
+        "summary":         str,
+        "days": [
+            {
+                "day":   int,
+                "theme": str,
+                "activities": [
+                    {
+                        "time":           str,
+                        "location_name":  str,
+                        "description":    str,
+                        "lat":            float,
+                        "lon":            float,
+                        "duration_hours": float
+                    }
+                ]
+            }
+        ],
+        "spots_used": [
+            { "rank": int, "name": str, "score": float, "lat": float, "lon": float, "district": str }
+        ]
+    }
+    """
+    logger.info(
+        "generate_itinerary: request='%s' | days=%d | top_k=%d",
+        request.user_request, request.num_days, request.top_k_spots,
+    )
+
+    try:
+        result = generate_trip_plan(
+            user_request=request.user_request,
+            num_days=request.num_days,
+            top_k_spots=request.top_k_spots,
+        )
+        return result.to_dict()
+
+    except RuntimeError as exc:
+        # Covers: GEMINI_API_KEY not set, KB not initialised, API call failure
+        err_msg = str(exc)
+        if "GEMINI_API_KEY" in err_msg:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Gemini API key is not configured. Set GEMINI_API_KEY in ml_service/.env.",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Itinerary generation failed: {err_msg}",
+        )
+
+    except ValueError as exc:
+        # Covers: empty request string, LLM schema validation errors
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid request or LLM response: {exc}",
+        )
+
+    except Exception as exc:
+        logger.exception("generate_itinerary: unexpected error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {exc}",
+        )

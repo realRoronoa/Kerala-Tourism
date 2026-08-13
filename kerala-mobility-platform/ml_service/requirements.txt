@@ -7,3 +7,5 @@ scikit-learn
 httpx
 chromadb
 sentence-transformers
+google-generativeai
+python-dotenv
