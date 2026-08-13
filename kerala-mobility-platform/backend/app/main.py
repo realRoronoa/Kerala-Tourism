@@ -2,15 +2,25 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.database.connection import engine, Base
+from app.database.connection import engine, Base, SessionLocal
 from app.models.trip import Trip  # Ensure models are registered in metadata
-from app.api.routes import location, trips, analytics
+from app.models.user import User
+from app.database.init_db import seed_database
+from app.api.routes import location, trips, analytics, auth
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Auto-create database tables on startup
     Base.metadata.create_all(bind=engine)
+    
+    # Auto-seed initial DB admin user and demo trips
+    if SessionLocal:
+        db = SessionLocal()
+        try:
+            seed_database(db)
+        finally:
+            db.close()
     yield
 
 
@@ -29,6 +39,7 @@ app.add_middleware(
 )
 
 # Mount Routers
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(location.router, prefix="/api/v1/location", tags=["Location"])
 app.include_router(trips.router, prefix="/api/v1/trips", tags=["Trips"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
