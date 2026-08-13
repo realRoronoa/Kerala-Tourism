@@ -1,0 +1,90 @@
+[
+  {
+    "id": "spot_001",
+    "name": "Fort Kochi Beach",
+    "category": ["beach", "heritage", "culture"],
+    "description": "A serene historic beach town in Kochi with Portuguese-era colonial architecture, Chinese fishing nets, art galleries, and calm Arabian Sea shores. Ideal for heritage walks, street food, and peaceful sunset views away from city crowds.",
+    "lat": 9.9658,
+    "lon": 76.2431,
+    "district": "Ernakulam",
+    "best_time": "October to March",
+    "crowd_level": "moderate"
+  },
+  {
+    "id": "spot_002",
+    "name": "Munnar Tea Gardens",
+    "category": ["nature", "mountains", "hills", "adventure"],
+    "description": "Sprawling high-altitude tea estates blanketing the Western Ghats hills at 1600m elevation. Misty green valleys, rolling plantations, cool climate, and panoramic mountain views. Perfect for trekking, nature photography, and escaping the summer heat.",
+    "lat": 10.0889,
+    "lon": 77.0595,
+    "district": "Idukki",
+    "best_time": "September to May",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_003",
+    "name": "Alleppey Backwaters",
+    "category": ["backwaters", "nature", "peaceful", "houseboat"],
+    "description": "A vast tranquil network of interconnected lagoons, canals, and lakes stretching across the coastal lowlands. Houseboat cruises glide past rice paddies, coconut groves, and village life. The 'Venice of the East' — ideal for slow travel and relaxation.",
+    "lat": 9.4981,
+    "lon": 76.3388,
+    "district": "Alappuzha",
+    "best_time": "November to February",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_004",
+    "name": "Wayanad Wildlife Sanctuary",
+    "category": ["wildlife", "nature", "forest", "adventure"],
+    "description": "Lush tropical rainforests sheltering elephants, leopards, gaur, and rare birds inside a protected reserve. Jeep safaris at dawn, tribal heritage villages, ancient Edakkal Caves with prehistoric carvings, and dense misty forests throughout.",
+    "lat": 11.6854,
+    "lon": 76.1320,
+    "district": "Wayanad",
+    "best_time": "October to May",
+    "crowd_level": "moderate"
+  },
+  {
+    "id": "spot_005",
+    "name": "Varkala Cliff Beach",
+    "category": ["beach", "adventure", "peaceful", "nature"],
+    "description": "Dramatic red laterite cliffs rising 30 metres directly above the Arabian Sea with mineral spring waterfalls flowing onto the beach. Less crowded than Kovalam, with yoga retreats, cliff-side cafes, paragliding, and a relaxed backpacker atmosphere.",
+    "lat": 8.7333,
+    "lon": 76.7019,
+    "district": "Thiruvananthapuram",
+    "best_time": "November to March",
+    "crowd_level": "low"
+  },
+  {
+    "id": "spot_006",
+    "name": "Periyar Tiger Reserve",
+    "category": ["wildlife", "nature", "adventure", "forest"],
+    "description": "Dense evergreen cardamom hill sanctuary around Periyar Lake in Thekkady. Boat safaris offer close encounters with wild elephant herds, tigers, sambar deer, and otters in their natural jungle habitat.",
+    "lat": 9.4679,
+    "lon": 77.1429,
+    "district": "Idukki",
+    "best_time": "October to June",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_007",
+    "name": "Athirappilly Waterfalls",
+    "category": ["waterfalls", "nature", "forest"],
+    "description": "Magnificent 80-foot wide waterfall cascading through Sholayar rainforests. Known as the 'Niagara of India', featuring roaring waters, bamboo thickets, hornbill sightings, and pristine jungle river banks.",
+    "lat": 10.2851,
+    "lon": 76.5698,
+    "district": "Thrissur",
+    "best_time": "September to January",
+    "crowd_level": "high"
+  },
+  {
+    "id": "spot_008",
+    "name": "Bekal Fort & Beach",
+    "category": ["heritage", "beach", "culture"],
+    "description": "Massive 300-year-old keyhole-shaped seaside fort overlooking the Malabar coast near Kasaragod. Features observation towers, sea bastions, landscaped gardens, and quiet golden sand beaches.",
+    "lat": 12.3924,
+    "lon": 75.0345,
+    "district": "Kasaragod",
+    "best_time": "October to March",
+    "crowd_level": "moderate"
+  }
+]
