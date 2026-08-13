@@ -1,9 +1,31 @@
 import os
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, Any, Union, Dict
 from jose import jwt
-from passlib.context import CryptContext
 from app.core.config import settings
+
+try:
+    import bcrypt
+
+    def get_password_hash(password: str) -> str:
+        pwd_bytes = password.encode('utf-8')[:72]
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
+
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        try:
+            pwd_bytes = plain_password.encode('utf-8')[:72]
+            hash_bytes = hashed_password.encode('utf-8')
+            return bcrypt.checkpw(pwd_bytes, hash_bytes)
+        except Exception:
+            return False
+except Exception:
+    def get_password_hash(password: str) -> str:
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return hashlib.sha256(plain_password.encode('utf-8')).hexdigest() == hashed_password
 
 firebase_auth = None
 firebase_initialized = False
@@ -15,10 +37,15 @@ try:
     if not firebase_admin._apps:
         cred_path = settings.FIREBASE_CREDENTIALS_PATH or "./firebase_service_account.json"
         if os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            print(f"[Firebase Admin] Initialized with service account key from {cred_path}")
-            firebase_initialized = True
+            try:
+                cred = credentials.Certificate(cred_path)
+                firebase_admin.initialize_app(cred)
+                print(f"[Firebase Admin] Initialized with service account key from {cred_path}")
+                firebase_initialized = True
+            except Exception as exc:
+                print(f"[Firebase Admin Notice] Key file present, using development fallback mode: {exc}")
+                firebase_admin.initialize_app()
+                firebase_initialized = True
         else:
             try:
                 firebase_admin.initialize_app()
@@ -35,16 +62,6 @@ except Exception as exc:
 SECRET_KEY = "NATPAC_KERALA_MOBILITY_SECRET_KEY_JWT_2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
 
 
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
