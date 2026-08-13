@@ -152,7 +152,7 @@ def _build_collection(
         "knowledge_base: embedding %d spots with '%s'...",
         len(spots), _EMBED_MODEL_NAME,
     )
-    embeddings = model.encode(texts, convert_to_list=True, show_progress_bar=False)
+    embeddings = model.encode(texts, show_progress_bar=False).tolist()
 
     # Build metadata dicts for each spot (stored alongside the vectors)
     metadatas: List[Dict[str, Any]] = []
@@ -263,8 +263,8 @@ def search_spots(
 
     # Embed the query using the same model
     query_embedding = _embed_model.encode(
-        query.strip(), convert_to_list=True, show_progress_bar=False
-    )
+        query.strip(), show_progress_bar=False
+    ).tolist()
 
     # Query the ChromaDB collection
     results = _chroma_collection.query(

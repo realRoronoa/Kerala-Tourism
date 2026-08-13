@@ -51,7 +51,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from app.pipelines.knowledge_base import search_spots
 
@@ -65,12 +66,14 @@ logger = logging.getLogger(__name__)
 # Gemini Configuration
 # ---------------------------------------------------------------------------
 
-_GEMINI_MODEL = "gemini-2.0-flash"
+_GEMINI_MODEL = "gemini-flash-latest"
 _GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
 
+_gemini_client: Optional[genai.Client] = None
+
 if _GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here":
-    genai.configure(api_key=_GEMINI_API_KEY)
-    logger.info("itinerary_generator: Gemini API key loaded successfully.")
+    _gemini_client = genai.Client(api_key=_GEMINI_API_KEY)
+    logger.info("itinerary_generator: Gemini client initialised (model=%s).", _GEMINI_MODEL)
 else:
     logger.warning(
         "itinerary_generator: GEMINI_API_KEY not set or is placeholder. "
@@ -222,9 +225,9 @@ def generate_trip_plan(
         If the LLM returns malformed JSON or a schema-invalid response.
     """
     # ------------------------------------------------------------------
-    # Guard: API key must be set
+    # Guard: client must be initialised
     # ------------------------------------------------------------------
-    if not _GEMINI_API_KEY or _GEMINI_API_KEY == "your_gemini_api_key_here":
+    if _gemini_client is None:
         raise RuntimeError(
             "GEMINI_API_KEY is not configured. "
             "Set it in ml_service/.env and restart the service."
@@ -267,22 +270,21 @@ def generate_trip_plan(
     )
 
     # ------------------------------------------------------------------
-    # Step 3: Call Gemini with JSON mode enforced
+    # Step 3: Call Gemini with JSON output enforced
     # ------------------------------------------------------------------
     logger.info(
         "generate_trip_plan: calling Gemini model '%s'...", _GEMINI_MODEL
     )
     try:
-        model = genai.GenerativeModel(
-            model_name=_GEMINI_MODEL,
-            system_instruction=system_prompt,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",   # enforce JSON output
-                temperature=0.4,                          # low temp = factual/consistent
+        response = _gemini_client.models.generate_content(
+            model=_GEMINI_MODEL,
+            contents=f"{system_prompt}\n\nUser request: {user_message}",
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.4,
                 max_output_tokens=4096,
             ),
         )
-        response = model.generate_content(user_message)
         raw_text: str = response.text.strip()
     except Exception as exc:
         raise RuntimeError(f"Gemini API call failed: {exc}") from exc
