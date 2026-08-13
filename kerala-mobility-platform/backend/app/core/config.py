@@ -12,9 +12,16 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS_PATH: Optional[str] = None
     FIREBASE_PROJECT_ID: Optional[str] = None
 
+    # External APIs (Optional - Fallbacks to open endpoints if not provided)
+    MAPBOX_API_KEY: Optional[str] = None
+    OPENWEATHER_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    OPENROUTESERVICE_API_KEY: Optional[str] = None
+
     class Config:
         env_file = ".env"
         extra = "ignore"
 
 
 settings = Settings()
+
