@@ -6,7 +6,7 @@ from app.database.connection import engine, Base, SessionLocal
 from app.models.trip import Trip  # Ensure models are registered in metadata
 from app.models.user import User
 from app.database.init_db import seed_database
-from app.api.routes import location, trips, analytics, auth, itinerary
+from app.api.routes import location, trips, analytics, auth, itinerary, external
 
 
 @asynccontextmanager
@@ -44,6 +44,8 @@ app.include_router(location.router, prefix="/api/v1/location", tags=["Location"]
 app.include_router(trips.router, prefix="/api/v1/trips", tags=["Trips"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(itinerary.router, prefix="/api/v1/itinerary", tags=["AI Itinerary Generator"])
+app.include_router(external.router, prefix="/api/v1/external", tags=["External APIs (Maps, Routing, Transit, Weather)"])
+
 
 
 @app.get("/")
