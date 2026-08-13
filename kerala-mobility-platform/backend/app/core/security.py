@@ -1,19 +1,36 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional, Any, Union, Dict
 from jose import jwt
 from passlib.context import CryptContext
+from app.core.config import settings
+
+firebase_auth = None
+firebase_initialized = False
 
 try:
     import firebase_admin
-    from firebase_admin import auth as firebase_auth, credentials
-    
+    from firebase_admin import auth as f_auth, credentials
+
     if not firebase_admin._apps:
-        try:
-            firebase_admin.initialize_app()
-        except Exception:
-            pass
-except Exception:
-    firebase_auth = None
+        cred_path = settings.FIREBASE_CREDENTIALS_PATH or "./firebase_service_account.json"
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            print(f"[Firebase Admin] Initialized with service account key from {cred_path}")
+            firebase_initialized = True
+        else:
+            try:
+                firebase_admin.initialize_app()
+                firebase_initialized = True
+            except Exception:
+                pass
+    else:
+        firebase_initialized = True
+
+    firebase_auth = f_auth
+except Exception as exc:
+    print(f"[Firebase Init Notice] Running in mock/fallback mode: {exc}")
 
 SECRET_KEY = "NATPAC_KERALA_MOBILITY_SECRET_KEY_JWT_2026"
 ALGORITHM = "HS256"
@@ -45,12 +62,12 @@ def verify_firebase_id_token(id_token: str) -> Optional[Dict[str, Any]]:
     """
     Verifies Firebase ID Token using Firebase Admin SDK with development mode fallback.
     """
-    if firebase_auth:
+    if firebase_auth and firebase_initialized:
         try:
             decoded_token = firebase_auth.verify_id_token(id_token)
             return decoded_token
         except Exception as exc:
-            print(f"[Firebase Auth Notice] Real Firebase token verification skipped/fallback: {exc}")
+            print(f"[Firebase Auth Notice] Real Firebase token verification fallback: {exc}")
 
     # Development mode verification fallback
     try:

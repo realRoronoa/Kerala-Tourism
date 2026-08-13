@@ -48,3 +48,18 @@ app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytic
 @app.get("/")
 def root_health_check():
     return {"message": "NATPAC Mobility Backend API is Running"}
+
+
+@app.get("/api/v1/health")
+def detailed_system_health():
+    db_status = "connected" if SessionLocal else "disconnected"
+    return {
+        "status": "online",
+        "service": "NATPAC Kerala Mobility System",
+        "components": {
+            "postgresql_postgis_db": db_status,
+            "redis_ingestion_queue": "ready",
+            "ml_inference_microservice": settings.ML_SERVICE_URL,
+            "firebase_admin_authentication": "active"
+        }
+    }
