@@ -3,11 +3,13 @@ import httpx
 from app.core.config import settings
 
 
-async def segment_stops(pings: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+async def analyze_trip(pings: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
-    Asynchronously sends a batch of raw GPS pings to the external ML service for trip segmentation.
+    Asynchronously sends a batch of raw GPS pings to the ML service endpoint
+    '/api/ml/analyze-trip' for the full 5-step ML inference pipeline (sorting pings,
+    detecting stops, slicing into trip legs, and RF mode classification).
     """
-    url = f"{settings.ML_SERVICE_URL}/segment-stops"
+    url = f"{settings.ML_SERVICE_URL}/api/ml/analyze-trip"
     timeout = httpx.Timeout(10.0, connect=5.0)
     
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -24,3 +26,7 @@ async def segment_stops(pings: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]
         except httpx.RequestError as exc:
             print(f"[ML Client Error] Network error occurred while connecting to ML service: {exc}")
             return None
+
+
+# Alias for backward compatibility
+segment_stops = analyze_trip

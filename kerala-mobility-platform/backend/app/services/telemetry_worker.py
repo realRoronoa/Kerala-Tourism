@@ -2,7 +2,7 @@ import json
 from typing import List, Dict, Any, Optional
 import redis.asyncio as aioredis
 from app.core.config import settings
-from app.services.ml_client import segment_stops
+from app.services.ml_client import analyze_trip
 
 QUEUE_KEY = "gps_telemetry_queue"
 
@@ -10,7 +10,8 @@ QUEUE_KEY = "gps_telemetry_queue"
 async def process_telemetry_queue(batch_size: int = 100) -> Optional[Dict[str, Any]]:
     """
     Background processor function that connects to Redis, pulls a batch of
-    GPS pings from 'gps_telemetry_queue', formats them, and calls ml_client.
+    GPS pings from 'gps_telemetry_queue', formats them, and calls ml_client's
+    full 5-step ML pipeline endpoint '/api/ml/analyze-trip'.
     """
     redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
     try:
@@ -31,8 +32,8 @@ async def process_telemetry_queue(batch_size: int = 100) -> Optional[Dict[str, A
         if not formatted_pings:
             return None
 
-        # Send batch to ML service for trip segmentation
-        result = await segment_stops(formatted_pings)
+        # Send batch to ML service for full 5-step trip analysis (stops + per-leg RF classification)
+        result = await analyze_trip(formatted_pings)
 
         # Trim processed elements from Redis queue
         await redis_client.ltrim(QUEUE_KEY, len(raw_pings), -1)
