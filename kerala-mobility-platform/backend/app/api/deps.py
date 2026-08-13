@@ -34,4 +34,26 @@ def get_current_user(
     return user
 
 
-__all__ = ["get_db", "get_current_user"]
+def get_current_admin(
+    current_user: Optional[User] = Depends(get_current_user)
+) -> User:
+    """
+    Dependency that enforces the authenticated user holds NATPAC Admin privileges.
+    Raises HTTP 401 if unauthenticated or HTTP 403 if user lacks admin role.
+    """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if current_user.role not in ["natpac_admin", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: Only NATPAC Administrators can access this resource."
+        )
+    return current_user
+
+
+__all__ = ["get_db", "get_current_user", "get_current_admin"]
+

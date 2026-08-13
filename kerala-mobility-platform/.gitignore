@@ -1,5 +1,12 @@
 __pycache__/
 *.pyc
 .env
+.env*.local
+*.pem
+*.key
+firebase_service_account*.json
+*_service_account*.json
 node_modules/
 .venv/
+.DS_Store
+
