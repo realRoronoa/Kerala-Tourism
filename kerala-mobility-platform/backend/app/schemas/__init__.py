@@ -1,5 +1,6 @@
 from app.schemas.trip import GPSPingSchema, TripResponseSchema, TripVerifySchema
-from app.schemas.user import UserCreate, UserResponse, Token, UserLogin
+from app.schemas.user import UserCreate, UserResponse, Token, UserLogin, FirebaseLoginRequest
+from app.schemas.itinerary import ItineraryRequestSchema, ItineraryResponseSchema
 
 __all__ = [
     "GPSPingSchema", 
@@ -8,5 +9,8 @@ __all__ = [
     "UserCreate",
     "UserResponse",
     "Token",
-    "UserLogin"
+    "UserLogin",
+    "FirebaseLoginRequest",
+    "ItineraryRequestSchema",
+    "ItineraryResponseSchema"
 ]
