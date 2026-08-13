@@ -33,7 +33,7 @@ const AccessibilityBar: React.FC<AccessibilityBarProps> = ({ onAdminLoginClick, 
   }, []);
 
   return (
-    <div className="bg-gray-200 text-sm text-gray-800 py-1 px-4 flex justify-end items-center gap-4 border-b border-gray-300">
+    <div className="bg-gray-200 text-sm text-gray-800 py-1.5 px-4 flex flex-wrap justify-between md:justify-end items-center gap-3 border-b border-gray-300">
 
       {/* Language Selector */}
       <div className="relative" ref={dropdownRef}>

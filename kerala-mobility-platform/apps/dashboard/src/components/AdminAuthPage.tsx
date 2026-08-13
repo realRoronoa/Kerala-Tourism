@@ -29,12 +29,16 @@ const AdminAuthPage: React.FC<AdminAuthPageProps> = ({ onLoginSuccess }) => {
     setSuccessMsg('Authenticating credentials...');
     
     try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
+
       const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({ username: email, password: password }),
+        body: formData.toString(),
       });
 
       if (response.ok) {

@@ -20,7 +20,7 @@ const ZoneStatisticsTable: React.FC = () => {
         </div>
       </div>
       <div className="p-6 overflow-x-auto">
-        <table className="w-full text-left border-collapse border border-gray-300">
+        <table className="w-full text-left border-collapse border border-gray-300 min-w-[800px]">
           <thead>
             <tr className="bg-gov-blue-primary text-white">
               <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm">Zone ID</th>

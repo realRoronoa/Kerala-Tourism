@@ -70,7 +70,7 @@ const ModeSharePanel: React.FC = () => {
             </div>
 
             {/* Legend */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {data.map((mode, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className={`w-6 h-6 border border-gray-400 flex-shrink-0 ${mode.colorClass}`}></div>
