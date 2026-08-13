@@ -23,6 +23,7 @@ class TripResponseSchema(BaseModel):
     start_time: datetime
     end_time: datetime
     predicted_mode: str
+    confidence_score: Optional[float] = None
     verified_mode: Optional[str] = None
     purpose: Optional[str] = None
     is_verified: bool = False

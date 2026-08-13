@@ -17,6 +17,7 @@ class Trip(Base):
     start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     predicted_mode: Mapped[str] = mapped_column(String, nullable=False)
+    confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     verified_mode: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     purpose: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
