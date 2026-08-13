@@ -1,10 +1,4 @@
-try:
-    from pydantic_settings import BaseSettings  # type: ignore # pyrefly: ignore [missing-import]
-except ImportError:
-    try:
-        from pydantic.v1 import BaseSettings  # type: ignore # pyrefly: ignore [missing-import]
-    except ImportError:
-        from pydantic import BaseModel as BaseSettings  # type: ignore # pyrefly: ignore [missing-import]
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

@@ -1,15 +1,10 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 from app.api.deps import get_db
 from app.models.trip import Trip
 from app.schemas.trip import TripResponseSchema, TripVerifySchema
-
-try:
-    from sqlalchemy.orm import Session  # type: ignore # pyrefly: ignore [missing-import]
-    from sqlalchemy import select  # type: ignore # pyrefly: ignore [missing-import]
-except ImportError:
-    Session = None  # type: ignore
-    select = None  # type: ignore
 
 router = APIRouter()
 
@@ -19,8 +14,6 @@ def get_unverified_trips(user_id: str, db: Session = Depends(get_db)):
     """
     Query database for unverified trips belonging to a specific user.
     """
-    if db is None or select is None:
-        return []
     stmt = select(Trip).where(Trip.user_id == user_id, Trip.is_verified == False)
     trips = db.scalars(stmt).all()
     return trips
@@ -32,12 +25,6 @@ def verify_trip(payload: TripVerifySchema, db: Session = Depends(get_db)):
     Accept user verification/correction for a trip, update record in PostgreSQL,
     mark is_verified = True, and commit.
     """
-    if db is None or select is None:
-        raise HTTPException(
-            status_code=status.HTTP_533_SERVICE_UNAVAILABLE if hasattr(status, "HTTP_533_SERVICE_UNAVAILABLE") else 503,
-            detail="Database session unavailable."
-        )
-
     stmt = select(Trip).where(Trip.id == payload.trip_id)
     trip = db.scalar(stmt)
     
