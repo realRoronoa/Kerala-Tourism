@@ -1,7 +1,7 @@
 // ─── Central API configuration ─────────────────────────────────────────────
 // Change BASE_URL to your production server when deploying.
 // For local development: http://localhost:8000
-export const BASE_URL = 'http://localhost:8000';
+export const BASE_URL = 'https://kerala-mobility-backend.onrender.com';
 
 // ─── Auth token storage key ─────────────────────────────────────────────────
 export const AUTH_TOKEN_KEY = 'km_auth_token';
