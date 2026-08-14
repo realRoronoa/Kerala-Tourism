@@ -57,6 +57,26 @@ export async function sendRealFirebaseSmsOtp(
   phoneNumber: string,
   elementId: string = 'recaptcha-container'
 ): Promise<ConfirmationResult> {
+  // Optional mock mode for testing without real Firebase SMS
+  const useMock = process.env.EXPO_PUBLIC_USE_MOCK_OTP === 'true';
+  if (useMock) {
+    // Return a mock ConfirmationResult where confirm resolves with a dummy token
+    const mockResult: ConfirmationResult = {
+      verificationId: 'mockVerificationId',
+      confirm: async (code: string) => {
+        // Accept any 10‑digit OTP (or any string) as valid
+        return {
+          user: {
+            getIdToken: async () => 'mock-firebase-id-token',
+          },
+        } as any;
+      },
+    } as any;
+    // Store for later verification calls
+    _confirmationResult = mockResult;
+    return mockResult;
+  }
+
   const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
   
   // Clear any existing window recaptcha verifier instance if any
@@ -80,12 +100,13 @@ export async function sendRealFirebaseSmsOtp(
 }
 
 /**
- * Verify real SMS OTP and return Firebase ID Token
+ * Verify OTP (real or mock) and return Firebase ID Token
  */
 export async function verifyRealFirebaseOtp(otpCode: string): Promise<string> {
   if (!_confirmationResult) {
     throw new Error('No active OTP session found. Please request a new OTP.');
   }
+  // In mock mode the confirm method will accept any code
   const userCredential = await _confirmationResult.confirm(otpCode);
   const idToken = await userCredential.user.getIdToken();
   return idToken;

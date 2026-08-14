@@ -40,6 +40,28 @@ export async function registerUser(payload: RegisterPayload): Promise<UserRespon
 }
 
 /**
+ * Exchange a Firebase ID token for a backend JWT session token.
+ * The backend verifies the Firebase token, auto‑creates a user if needed,
+ * and returns a JWT used for all subsequent API calls.
+ */
+export async function loginWithFirebaseToken(idToken: string) {
+  // Call the backend endpoint that verifies the Firebase token
+  const data = await apiFetch<TokenResponse>('/api/v1/auth/firebase-login', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+  // Persist the JWT for future requests
+  storeToken(data.access_token, `fb_${Date.now()}`);
+  return data;
+}
+  return apiFetch<UserResponse>('/api/v1/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
  * Login with email + password (OAuth2 form format).
  * Stores returned token automatically.
  */

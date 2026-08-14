@@ -1,0 +1,35 @@
+[
+  {
+    "id": "MUN001",
+    "name": "Munnar – Tea Gardens",
+    "category": "Hill Station",
+    "description": "Rolling tea estates, mist‑covered hills, and cool climate. Ideal for trekking and photography.",
+    "lat": 10.0889,
+    "lng": 77.0595,
+    "address": "Munnar, Idukki, Kerala, India",
+    "opening_hours": "06:00‑20:00",
+    "entry_fee": "INR 20 (adult)",
+    "rating": 4.7,
+    "images": [
+      "https://example.com/images/munnar/1.jpg",
+      "https://example.com/images/munnar/2.jpg"
+    ],
+    "best_for": ["family", "couple", "friends", "photography"],
+    "tags": ["tea", "hiking", "nature"]
+  },
+  {
+    "id": "ALAP001",
+    "name": "Alappuzha – Backwaters",
+    "category": "Waterway",
+    "description": "Relax on a traditional houseboat cruising through palm‑lined canals.",
+    "lat": 9.4981,
+    "lng": 76.3389,
+    "address": "Alappuzha, Kerala, India",
+    "opening_hours": "24/7 (houseboats on‑demand)",
+    "entry_fee": "Varies by houseboat",
+    "rating": 4.5,
+    "images": ["https://example.com/images/alappuzha/1.jpg"],
+    "best_for": ["family", "couple", "alone", "romantic"],
+    "tags": ["houseboat", "sunset", "cuisine"]
+  }
+]
