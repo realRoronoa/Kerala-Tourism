@@ -124,7 +124,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white select-none items-center" style={{ touchAction: 'pan-y' }}>
+    <View className="flex-1 bg-white select-none items-center" style={{ overflow: 'hidden', height: Platform.OS === 'web' ? '100vh' : '100%' }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 justify-between w-full"

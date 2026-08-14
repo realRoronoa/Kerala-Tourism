@@ -7,7 +7,8 @@ import SectionHeading from '../components/SectionHeading';
 import ConfidenceBadge from '../components/ConfidenceBadge';
 import { getWeather, WeatherData } from '../api/weather';
 import { getUnverifiedTrips, Trip } from '../api/trips';
-import { getUserId } from '../api/client';
+import { getUserId, getUserData } from '../api/client';
+import FeedbackCard from '../components/FeedbackCard';
 
 /* ── Types ── */
 interface Place {
@@ -19,11 +20,11 @@ interface Place {
 
 /* ── Quick Actions ── */
 const QUICK_ACTIONS = [
-  { icon: 'clock' as const, label: 'History', bg: '#1B4332', route: 'Trips' },
-  { icon: 'bar-chart-2' as const, label: 'Insights', bg: '#1B4332', route: 'Explore' },
-  { icon: 'credit-card' as const, label: 'Fares', bg: '#C89B3C', route: 'Explore' },
-  { icon: 'alert-triangle' as const, label: 'Report', bg: '#8B4513', route: 'Trips' },
-  { icon: 'shield' as const, label: 'Privacy', bg: '#6B7280', route: 'Privacy' },
+  { icon: 'clock' as const, label: 'History', bg: '#F3F4F6', color: '#1F2937', route: 'Trips' },
+  { icon: 'bar-chart-2' as const, label: 'Insights', bg: '#F3F4F6', color: '#1F2937', route: 'Explore' },
+  { icon: 'credit-card' as const, label: 'Fares', bg: '#F3F4F6', color: '#1F2937', route: 'Explore' },
+  { icon: 'alert-triangle' as const, label: 'Report', bg: '#F3F4F6', color: '#1F2937', route: 'Trips' },
+  { icon: 'shield' as const, label: 'Privacy', bg: '#F3F4F6', color: '#1F2937', route: 'Privacy' },
 ];
 
 /* ── Weather helpers ── */
@@ -157,9 +158,9 @@ export default function HomeScreen() {
 
         {/* ── Greeting ── */}
         <View className="px-5 pt-4">
-          <Text className="font-inter text-sm text-gray-500">Good morning, Citizen</Text>
-          <Text className="font-inter-bold text-2xl text-gray-900 mt-0.5">Today</Text>
-          <Text className="font-inter text-xs text-gray-400 mt-0.5">
+          <Text className="font-inter text-sm text-gray-500">Good morning{getUserData()?.full_name ? `, ${getUserData()?.full_name.split(' ')[0]}` : ''}</Text>
+          <Text className="font-inter-bold text-[26px] text-gray-900 mt-0.5">Today</Text>
+          <Text className="font-inter text-[14px] text-gray-500 mt-0.5">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
           </Text>
         </View>
@@ -171,8 +172,8 @@ export default function HomeScreen() {
               <Skeleton className="h-10 w-full" />
             ) : weatherError ? (
               <View className="flex-row items-center bg-gray-50 border border-gray-100 rounded-card px-3 py-2.5">
-                <Feather name="wifi-off" size={14} color="#9CA3AF" />
-                <Text className="font-inter text-xs text-gray-400 ml-2">Couldn't load weather data</Text>
+                <Feather name="cloud-off" size={14} color="#9CA3AF" />
+                <Text className="font-inter text-xs text-gray-400 ml-2">Weather data unavailable</Text>
               </View>
             ) : weather ? (
               <View className="flex-row items-center bg-kerala-gold/15 rounded-card px-3 py-2.5">
@@ -198,12 +199,12 @@ export default function HomeScreen() {
               { icon: 'navigation' as const, value: `${totalKm} km`, label: 'Distance' },
               { icon: 'clock' as const, value: `${(totalTrips * 15)} min`, label: 'Duration' },
             ].map((stat) => (
-              <View key={stat.label} className="flex-1 bg-white border border-kerala-border rounded-card py-3 items-center">
+              <View key={stat.label} className="flex-1 bg-green-50 border border-green-100 rounded-card py-3 items-center">
                 <View className="flex-row items-center mb-1">
-                  <Feather name={stat.icon} size={13} color="#6B7280" />
+                  <Feather name={stat.icon} size={13} color="#0B6E4F" />
                   <Text className="font-inter-bold text-base text-gray-900 ml-1.5">{stat.value}</Text>
                 </View>
-                <Text className="font-inter text-[11px] text-gray-400">{stat.label}</Text>
+                <Text className="font-inter text-[11px] text-gray-500">{stat.label}</Text>
               </View>
             ))
           )}
@@ -219,9 +220,9 @@ export default function HomeScreen() {
               activeOpacity={0.7}
             >
               <View className="w-12 h-12 rounded-full items-center justify-center mb-1.5" style={{ backgroundColor: action.bg }}>
-                <Feather name={action.icon} size={18} color="#FFFFFF" />
+                <Feather name={action.icon} size={18} color={action.color} />
               </View>
-              <Text className="font-inter-medium text-[11px] text-gray-600">{action.label}</Text>
+              <Text className="font-inter-medium text-[12px] text-gray-600">{action.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -248,11 +249,15 @@ export default function HomeScreen() {
               {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
             </View>
           ) : trips.length === 0 ? (
-            <View className="bg-white border border-kerala-border rounded-card p-6 items-center">
-              <Feather name="map" size={32} color="#D1D5DB" />
-              <Text className="font-inter-semibold text-sm text-gray-500 mt-3">No trips detected yet</Text>
-              <Text className="font-inter text-xs text-gray-400 mt-1 text-center">Start your journey — we'll automatically detect your transit trips.</Text>
-            </View>
+            <FeedbackCard
+              iconName="map"
+              message="No trips detected yet"
+              subMessage="Start your journey — we'll automatically detect your transit trips."
+              primaryAction={{
+                label: 'Log a Trip Now',
+                onPress: () => (navigation as any).navigate('Trips')
+              }}
+            />
           ) : (
             <View className="gap-0">
               {trips.map((trip) => (

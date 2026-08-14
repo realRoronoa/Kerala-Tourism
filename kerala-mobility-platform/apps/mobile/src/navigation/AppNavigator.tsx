@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/HomeScreen';
 import TripHistoryScreen from '../screens/TripVerificationScreen';
@@ -16,11 +16,11 @@ import MyProfileScreen from '../screens/MyProfileScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const TAB_ICON: Record<string, keyof typeof Feather.glyphMap> = {
+const TAB_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   Home: 'home',
   Trips: 'map',
   Explore: 'compass',
-  Profile: 'user',
+  Profile: 'person',
 };
 
 function MainTabs() {
@@ -28,14 +28,17 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ color, size }) => (
-          <Feather
-            name={TAB_ICON[route.name] || 'circle'}
-            size={size - 4}
-            color={color}
-          />
-        ),
-        tabBarActiveTintColor: '#1B4332',
+        tabBarIcon: ({ color, size, focused }) => {
+          const iconName = TAB_ICON[route.name] || 'ellipse';
+          return (
+            <Ionicons
+              name={focused ? iconName : (`${iconName}-outline` as any)}
+              size={size - 2}
+              color={color}
+            />
+          );
+        },
+        tabBarActiveTintColor: '#0B6E4F',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarLabelStyle: {
           fontFamily: 'Inter_500Medium',
