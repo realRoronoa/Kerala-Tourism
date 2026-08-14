@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Header from '../components/Header';
 import SectionHeading from '../components/SectionHeading';
-import { getSpots, KeralaSpot } from '../api/explore';
+import { getSpots, KeralaSpot, generateItinerary, GeneratedItinerary } from '../api/explore';
 import { searchLocation, SearchLocationResult } from '../api/weather';
 
 type TabOption = 'Discovery' | 'Your Impact';
@@ -51,6 +51,13 @@ export default function ExploreScreen() {
   const [searchLoading, setSearchLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Itinerary generation state
+  const [showItineraryModal, setShowItineraryModal] = useState(false);
+  const [itineraryQuery, setItineraryQuery] = useState('');
+  const [itineraryDays, setItineraryDays] = useState(3);
+  const [itineraryLoading, setItineraryLoading] = useState(false);
+  const [generatedItinerary, setGeneratedItinerary] = useState<GeneratedItinerary | null>(null);
+
   // Fetch spots on mount or when category changes
   const fetchSpots = useCallback(async (category: string) => {
     setSpotsLoading(true);
@@ -84,6 +91,22 @@ export default function ExploreScreen() {
         setSearchLoading(false);
       }
     }, 400);
+  };
+
+  const handleGenerateItinerary = async () => {
+    if (!itineraryQuery.trim()) return;
+    setItineraryLoading(true);
+    try {
+      const res = await generateItinerary({
+        user_request: itineraryQuery,
+        days: itineraryDays,
+      });
+      setGeneratedItinerary(res);
+    } catch (err) {
+      alert("Failed to generate itinerary. Please try again.");
+    } finally {
+      setItineraryLoading(false);
+    }
   };
 
   const categoryIcon: Record<string, keyof typeof Feather.glyphMap> = {
@@ -280,6 +303,125 @@ export default function ExploreScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* FAB for AI Itinerary */}
+      {activeTab === 'Discovery' && (
+        <TouchableOpacity
+          onPress={() => setShowItineraryModal(true)}
+          className="absolute bottom-6 right-5 bg-kerala-green rounded-full shadow-lg flex-row items-center justify-center"
+          style={{ paddingHorizontal: 20, height: 56, elevation: 5 }}
+        >
+          <Feather name="map" size={20} color="#FFFFFF" />
+          <Text className="font-inter-semibold text-white text-sm ml-2">AI Trip Planner</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Itinerary Modal */}
+      <Modal visible={showItineraryModal} animationType="slide" presentationStyle="pageSheet">
+        <View className="flex-1 bg-kerala-surface">
+          {/* Header */}
+          <View className="flex-row items-center justify-between px-5 py-4 bg-white border-b border-kerala-border">
+            <Text className="font-inter-semibold text-lg text-gray-900">
+              {generatedItinerary ? 'Your Kerala Itinerary' : 'Plan Your Trip'}
+            </Text>
+            <TouchableOpacity onPress={() => setShowItineraryModal(false)}>
+              <Feather name="x" size={24} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+            {!generatedItinerary ? (
+              // Generator Form
+              <View>
+                <Text className="font-inter-semibold text-gray-900 mb-2">What kind of trip are you looking for?</Text>
+                <TextInput
+                  value={itineraryQuery}
+                  onChangeText={setItineraryQuery}
+                  placeholder="e.g. A peaceful 2-day trip near backwaters and wildlife..."
+                  multiline
+                  numberOfLines={4}
+                  className="bg-white border border-kerala-border rounded-card p-4 font-inter text-gray-800 text-sm mb-5"
+                  style={{ minHeight: 100, textAlignVertical: 'top', outlineStyle: 'none' } as any}
+                />
+                
+                <Text className="font-inter-semibold text-gray-900 mb-2">How many days?</Text>
+                <View className="flex-row items-center mb-8 gap-3">
+                  {[1, 2, 3, 5, 7].map((num) => (
+                    <TouchableOpacity
+                      key={num}
+                      onPress={() => setItineraryDays(num)}
+                      className={`w-12 h-12 rounded-full items-center justify-center border ${
+                        itineraryDays === num ? 'bg-kerala-green border-kerala-green' : 'bg-white border-kerala-border'
+                      }`}
+                    >
+                      <Text className={`font-inter-semibold ${itineraryDays === num ? 'text-white' : 'text-gray-600'}`}>{num}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleGenerateItinerary}
+                  disabled={!itineraryQuery.trim() || itineraryLoading}
+                  className={`py-4 rounded-full flex-row items-center justify-center ${
+                    !itineraryQuery.trim() ? 'bg-gray-300' : 'bg-kerala-green'
+                  }`}
+                >
+                  {itineraryLoading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Feather name="cpu" size={20} color="#FFFFFF" />
+                      <Text className="font-inter-semibold text-white ml-2">Generate Magic</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Results UI
+              <View>
+                <Text className="font-inter-bold text-2xl text-gray-900 leading-8 mb-2">
+                  {generatedItinerary.itinerary_title}
+                </Text>
+                <Text className="font-inter-medium text-sm text-kerala-green mb-4">
+                  {generatedItinerary.total_days} Days • {generatedItinerary.destination}
+                </Text>
+                <Text className="font-inter text-sm text-gray-600 leading-6 mb-6">
+                  {generatedItinerary.summary}
+                </Text>
+
+                {generatedItinerary.days.map((day, dIdx) => (
+                  <View key={dIdx} className="mb-6">
+                    <View className="flex-row items-center mb-3">
+                      <View className="w-8 h-8 rounded-full bg-kerala-green items-center justify-center mr-3">
+                        <Text className="font-inter-bold text-white text-xs">{day.day}</Text>
+                      </View>
+                      <Text className="font-inter-semibold text-lg text-gray-900">{day.theme}</Text>
+                    </View>
+                    
+                    <View className="border-l-2 border-kerala-border ml-4 pl-5">
+                      {day.activities.map((act, aIdx) => (
+                        <View key={aIdx} className="mb-5 relative">
+                          <View className="absolute -left-[27px] top-1 w-3 h-3 rounded-full bg-white border-2 border-kerala-green" />
+                          <Text className="font-inter-semibold text-xs text-kerala-green mb-1">{act.time}</Text>
+                          <Text className="font-inter-semibold text-base text-gray-900 mb-1">{act.location_name}</Text>
+                          <Text className="font-inter text-sm text-gray-600 leading-5">{act.description}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+
+                <TouchableOpacity
+                  onPress={() => setGeneratedItinerary(null)}
+                  className="py-4 bg-gray-100 rounded-full items-center mt-4 border border-gray-200"
+                >
+                  <Text className="font-inter-semibold text-gray-600">Start Over</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
