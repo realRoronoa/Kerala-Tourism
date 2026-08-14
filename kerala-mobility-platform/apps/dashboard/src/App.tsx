@@ -25,7 +25,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-gray-900 overflow-x-hidden">
 
       <AccessibilityBar 
         onAdminLoginClick={() => setActiveTab('login')}
@@ -40,7 +40,7 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
       
-      <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 md:px-8 lg:px-12 py-8 flex flex-col">
+      <main className="flex-1 max-w-screen-2xl mx-auto w-full min-w-0 px-4 md:px-8 lg:px-12 py-8 flex flex-col overflow-hidden">
         {activeTab === 'about' && <AboutNatpac />}
         {activeTab === 'login' && !isLoggedIn && (
           <AdminAuthPage onLoginSuccess={() => { setIsLoggedIn(true); setActiveTab('data'); }} />
