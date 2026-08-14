@@ -67,17 +67,22 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _GEMINI_MODEL = "gemini-flash-latest"
-_GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+_GEMINI_API_KEYS_RAW = os.getenv("GEMINI_API_KEY", "")
 
-_gemini_client: Optional[genai.Client] = None
+_gemini_keys: List[str] = []
 
-if _GEMINI_API_KEY and _GEMINI_API_KEY != "your_gemini_api_key_here":
-    _gemini_client = genai.Client(api_key=_GEMINI_API_KEY)
-    logger.info("itinerary_generator: Gemini client initialised (model=%s).", _GEMINI_MODEL)
+# Parse comma-separated keys, ignoring placeholders and empty strings
+for key in _GEMINI_API_KEYS_RAW.split(","):
+    k = key.strip()
+    if k and k != "your_gemini_api_key_here":
+        _gemini_keys.append(k)
+
+if _gemini_keys:
+    logger.info("itinerary_generator: Loaded %d Gemini API keys (model=%s).", len(_gemini_keys), _GEMINI_MODEL)
 else:
     logger.warning(
-        "itinerary_generator: GEMINI_API_KEY not set or is placeholder. "
-        "generate_trip_plan() will raise RuntimeError until the key is configured."
+        "itinerary_generator: No valid GEMINI_API_KEY found. "
+        "generate_trip_plan() will raise RuntimeError until configured."
     )
 
 # ---------------------------------------------------------------------------
@@ -225,13 +230,17 @@ def generate_trip_plan(
         If the LLM returns malformed JSON or a schema-invalid response.
     """
     # ------------------------------------------------------------------
-    # Guard: client must be initialised
+    # Guard: client keys must be configured
     # ------------------------------------------------------------------
-    if _gemini_client is None:
+    if not _gemini_keys:
         raise RuntimeError(
             "GEMINI_API_KEY is not configured. "
             "Set it in ml_service/.env and restart the service."
         )
+
+    import random
+    selected_key = random.choice(_gemini_keys)
+    client = genai.Client(api_key=selected_key)
 
     if not user_request or not user_request.strip():
         raise ValueError("user_request must be a non-empty string.")
@@ -276,7 +285,7 @@ def generate_trip_plan(
         "generate_trip_plan: calling Gemini model '%s'...", _GEMINI_MODEL
     )
     try:
-        response = _gemini_client.models.generate_content(
+        response = client.models.generate_content(
             model=_GEMINI_MODEL,
             contents=f"{system_prompt}\n\nUser request: {user_message}",
             config=types.GenerateContentConfig(
