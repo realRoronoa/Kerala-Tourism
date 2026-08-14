@@ -6,6 +6,5 @@ pandas
 scikit-learn
 httpx
 chromadb
-sentence-transformers
 google-genai
 python-dotenv

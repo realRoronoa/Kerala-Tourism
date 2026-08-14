@@ -28,11 +28,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import random
 from typing import Any, Dict, List, Optional
-
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
+from google import genai
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ _SPOTS_JSON_PATH: str = os.path.join(
     "kerala_spots.json",
 )
 
-# Sentence-Transformers model — lightweight 22M-param model, 384-dim embeddings
-_EMBED_MODEL_NAME: str = "all-MiniLM-L6-v2"
+# Use Gemini API for embeddings instead of local PyTorch models to save RAM
+_EMBED_MODEL_NAME: str = "text-embedding-004"
 
 # ChromaDB collection name
 _COLLECTION_NAME: str = "kerala_tourist_spots"
@@ -57,8 +57,26 @@ _COLLECTION_NAME: str = "kerala_tourist_spots"
 # Internal state — built once at import
 # ---------------------------------------------------------------------------
 
-_embed_model: Optional[SentenceTransformer] = None
 _chroma_collection: Optional[chromadb.Collection] = None
+
+def _get_gemini_client() -> genai.Client:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(os.path.dirname(__file__), "..", "..", ".env")
+    load_dotenv(dotenv_path=os.path.abspath(_env_path))
+    
+    keys_raw = os.getenv("GEMINI_API_KEY", "")
+    keys = [k.strip() for k in keys_raw.split(",") if k.strip() and k.strip() != "your_gemini_api_key_here"]
+    if not keys:
+        raise RuntimeError("GEMINI_API_KEY not set")
+    return genai.Client(api_key=random.choice(keys))
+
+def _embed_texts(texts: List[str]) -> List[List[float]]:
+    client = _get_gemini_client()
+    response = client.models.embed_content(
+        model=_EMBED_MODEL_NAME,
+        contents=texts
+    )
+    return [e.values for e in response.embeddings]
 
 
 # ---------------------------------------------------------------------------
@@ -121,14 +139,12 @@ def _build_embed_text(spot: Dict[str, Any]) -> str:
 
 def _build_collection(
     spots: List[Dict[str, Any]],
-    model: SentenceTransformer,
 ) -> chromadb.Collection:
     """Embed all spots and store them in an in-memory ChromaDB collection.
 
     Parameters
     ----------
     spots : list of spot dicts loaded from kerala_spots.json
-    model : loaded SentenceTransformer model
 
     Returns
     -------
@@ -152,7 +168,7 @@ def _build_collection(
         "knowledge_base: embedding %d spots with '%s'...",
         len(spots), _EMBED_MODEL_NAME,
     )
-    embeddings = model.encode(texts, show_progress_bar=False).tolist()
+    embeddings = _embed_texts(texts)
 
     # Build metadata dicts for each spot (stored alongside the vectors)
     metadatas: List[Dict[str, Any]] = []
@@ -183,17 +199,11 @@ def _build_collection(
 
 
 def _initialise() -> None:
-    """Load the model, load spots, build collection.  Called once at import."""
-    global _embed_model, _chroma_collection
-
-    logger.info(
-        "knowledge_base: loading sentence-transformer model '%s'...",
-        _EMBED_MODEL_NAME,
-    )
-    _embed_model = SentenceTransformer(_EMBED_MODEL_NAME)
+    """Load spots and build collection. Called once at import."""
+    global _chroma_collection
 
     spots = _load_spots(_SPOTS_JSON_PATH)
-    _chroma_collection = _build_collection(spots, _embed_model)
+    _chroma_collection = _build_collection(spots)
 
 
 # ---------------------------------------------------------------------------
@@ -250,7 +260,7 @@ def search_spots(
     2 Fort Kochi Beach 0.761
     3 Bekal Fort 0.704
     """
-    if _embed_model is None or _chroma_collection is None:
+    if _chroma_collection is None:
         raise RuntimeError(
             "Knowledge base is not initialised. "
             "Ensure _initialise() ran successfully at import time."
@@ -261,10 +271,8 @@ def search_spots(
 
     top_k = max(1, min(top_k, _chroma_collection.count()))
 
-    # Embed the query using the same model
-    query_embedding = _embed_model.encode(
-        query.strip(), show_progress_bar=False
-    ).tolist()
+    # Embed the query using the Gemini API
+    query_embedding = _embed_texts([query.strip()])[0]
 
     # Query the ChromaDB collection
     results = _chroma_collection.query(
