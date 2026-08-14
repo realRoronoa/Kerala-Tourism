@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
@@ -58,7 +58,15 @@ export default function HomeScreen() {
 
   // Interactive UI state
   const [showWeather, setShowWeather] = useState(true);
-  const [workSet, setWorkSet] = useState(false);
+  
+  // Quick Access Chips State
+  const [places, setPlaces] = useState([
+    { id: 'home', name: 'Home', icon: 'home', traffic: 'green' },
+    { id: 'work', name: 'Technopark', icon: 'briefcase', traffic: 'gold' },
+  ]);
+  const [selectedPlace, setSelectedPlace] = useState<any>(null); // For action sheet
+  const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
+  const [newPlaceName, setNewPlaceName] = useState('');
 
   useEffect(() => {
     // Fetch weather (silent fail)
@@ -102,24 +110,41 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ── Pill Tabs ── */}
-        <View className="flex-row px-5 pt-4 gap-3">
-          <View className="flex-row items-center bg-white border border-kerala-border rounded-full px-4 py-2">
-            <View className="w-2 h-2 rounded-full bg-kerala-green mr-2" />
-            <Text className="font-inter-medium text-sm text-gray-800">Home</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => setWorkSet(!workSet)}
-            className="flex-row items-center bg-white border border-kerala-border rounded-full px-4 py-2"
+        <View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4, gap: 8 }}
           >
-            {workSet ? (
-              <View className="flex-row items-center">
-                <Feather name="briefcase" size={12} color="#0B6E4F" style={{ marginRight: 6 }} />
-                <Text className="font-inter-medium text-sm text-kerala-green">Technopark</Text>
-              </View>
-            ) : (
-              <Text className="font-inter text-sm text-gray-500">+ Set Work</Text>
-            )}
-          </TouchableOpacity>
+            {places.map((place) => (
+              <TouchableOpacity
+                key={place.id}
+                onPress={() => setSelectedPlace(place)}
+                className="flex-row items-center bg-white border border-kerala-border rounded-full px-3 py-1.5"
+                activeOpacity={0.7}
+              >
+                <Feather name={place.icon as any} size={12} color="#0B6E4F" style={{ marginRight: 6 }} />
+                <Text className="font-inter-medium text-[13px] text-gray-800">{place.name}</Text>
+                {place.traffic && (
+                  <View 
+                    className="w-2 h-2 rounded-full ml-1.5" 
+                    style={{ 
+                      backgroundColor: place.traffic === 'green' ? '#10B981' : place.traffic === 'gold' ? '#F59E0B' : '#EF4444' 
+                    }} 
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              onPress={() => setIsAddPlaceOpen(true)}
+              className="flex-row items-center bg-white border border-kerala-border rounded-full px-3 py-1.5"
+              activeOpacity={0.7}
+            >
+              <Feather name="plus" size={12} color="#6B7280" style={{ marginRight: 4 }} />
+              <Text className="font-inter-medium text-[13px] text-gray-500">Add Place</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
 
         {/* ── Greeting ── */}
@@ -259,6 +284,107 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Action Sheet Modal */}
+      <Modal visible={!!selectedPlace} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-end">
+          <TouchableOpacity className="flex-1" onPress={() => setSelectedPlace(null)} activeOpacity={1} />
+          <View className="bg-white rounded-t-3xl p-5 pb-8">
+            <View className="flex-row justify-between items-center mb-6">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-kerala-green/10 items-center justify-center mr-3">
+                  <Feather name={selectedPlace?.icon as any} size={18} color="#0B6E4F" />
+                </View>
+                <Text className="font-inter-bold text-xl text-gray-900">{selectedPlace?.name}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedPlace(null)} className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center">
+                <Feather name="x" size={18} color="#000" />
+              </TouchableOpacity>
+            </View>
+            
+            <View className="gap-2">
+              <TouchableOpacity 
+                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                activeOpacity={0.7}
+                onPress={() => setSelectedPlace(null)}
+              >
+                <Feather name="navigation" size={18} color="#2563EB" />
+                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Get Directions</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                activeOpacity={0.7}
+                onPress={() => {
+                  setSelectedPlace(null);
+                  (navigation as any).navigate('Trips');
+                }}
+              >
+                <Feather name="play-circle" size={18} color="#0B6E4F" />
+                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Log a Trip Now</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
+                activeOpacity={0.7}
+                onPress={() => setSelectedPlace(null)}
+              >
+                <Feather name="edit-2" size={18} color="#6B7280" />
+                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Edit Location</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Place Modal */}
+      <Modal visible={isAddPlaceOpen} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-end">
+          <TouchableOpacity className="flex-1" onPress={() => setIsAddPlaceOpen(false)} activeOpacity={1} />
+          <View className="bg-white rounded-t-3xl p-5 pb-8">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="font-inter-bold text-xl text-gray-900">Add New Place</Text>
+              <TouchableOpacity onPress={() => setIsAddPlaceOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center">
+                <Feather name="x" size={18} color="#000" />
+              </TouchableOpacity>
+            </View>
+            
+            <Text className="font-inter-medium text-sm text-gray-700 mb-2">Location Name</Text>
+            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-5">
+              <Feather name="map-pin" size={16} color="#9CA3AF" />
+              <TextInput
+                value={newPlaceName}
+                onChangeText={setNewPlaceName}
+                placeholder="e.g., Gym, School, Cafe"
+                placeholderTextColor="#9CA3AF"
+                className="flex-1 ml-2 font-inter text-base text-gray-900 outline-none"
+                style={{ padding: 0, outlineStyle: 'none' } as any}
+                autoFocus
+              />
+            </View>
+
+            <TouchableOpacity 
+              className="bg-kerala-green rounded-xl py-3.5 items-center justify-center opacity-90"
+              activeOpacity={0.8}
+              onPress={() => {
+                if (newPlaceName.trim()) {
+                  setPlaces([...places, { 
+                    id: Date.now().toString(), 
+                    name: newPlaceName.trim(), 
+                    icon: 'map-pin', 
+                    traffic: '' 
+                  }]);
+                  setNewPlaceName('');
+                  setIsAddPlaceOpen(false);
+                }
+              }}
+            >
+              <Text className="font-inter-semibold text-base text-white">Save Location</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }

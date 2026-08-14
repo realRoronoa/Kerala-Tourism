@@ -205,6 +205,10 @@ export default function Header({
               <TouchableOpacity 
                 className="flex-row items-center p-4 bg-gray-50 rounded-xl border border-gray-100"
                 activeOpacity={0.7}
+                onPress={() => {
+                  setIsSettingsOpen(false);
+                  (navigation as any).navigate('MyProfile');
+                }}
               >
                 <Feather name="user" size={18} color="#374151" />
                 <Text className="font-inter-semibold text-sm text-gray-900 ml-3 flex-1">My Profile</Text>
@@ -216,7 +220,7 @@ export default function Header({
                 activeOpacity={0.7}
                 onPress={() => {
                   setIsSettingsOpen(false);
-                  (navigation as any).navigate('Privacy');
+                  (navigation as any).navigate('Profile');
                 }}
               >
                 <Feather name="shield" size={18} color="#374151" />
