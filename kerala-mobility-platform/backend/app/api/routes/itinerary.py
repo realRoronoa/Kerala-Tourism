@@ -48,7 +48,12 @@ async def generate_tourist_itinerary(payload: ItineraryRequestSchema):
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         try:
-            response = await client.post(url, json=payload.model_dump())
+            ml_payload = {
+                "user_request": payload.user_request,
+                "num_days": payload.days,
+                "top_k_spots": 6
+            }
+            response = await client.post(url, json=ml_payload)
             response.raise_for_status()
             return response.json()
         except Exception:
@@ -56,8 +61,8 @@ async def generate_tourist_itinerary(payload: ItineraryRequestSchema):
             spots = load_spots_dataset()
             matched = [
                 s for s in spots 
-                if any(pref.lower() in [c.lower() for c in s.get("category", [])] for pref in payload.preferences)
-            ] if payload.preferences else spots
+                if any(pref.lower() in [c.lower() for c in s.get("category", [])] for pref in payload.preferred_categories)
+            ] if payload.preferred_categories else spots
 
             if not matched:
                 matched = spots
