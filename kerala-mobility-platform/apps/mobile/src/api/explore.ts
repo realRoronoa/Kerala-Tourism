@@ -62,8 +62,34 @@ export interface GeneratedItinerary {
 }
 
 export async function generateItinerary(payload: ItineraryRequest): Promise<GeneratedItinerary> {
-  return apiFetch<GeneratedItinerary>('/api/v1/itinerary/generate', {
+  const data = await apiFetch<any>('/api/v1/itinerary/generate', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+  // Normalize fallback response if ML service is down
+  if (data.status === 'success' && !data.days?.length) {
+    return {
+      itinerary_title: "Customized Travel Plan",
+      destination: "Kerala",
+      total_days: data.days || payload.days || 3,
+      summary: data.itinerary_summary || "A fallback customized plan.",
+      days: [
+        {
+          day: 1,
+          theme: "Explore Recommended Spots",
+          activities: (data.recommended_spots || []).map((spot: any, i: number) => ({
+            time: `${9 + i}:00 AM`,
+            location_name: spot.name,
+            description: spot.description || "Visit this wonderful location.",
+            lat: spot.lat || 0,
+            lon: spot.lon || 0,
+            duration_hours: 2
+          }))
+        }
+      ]
+    };
+  }
+
+  return data as GeneratedItinerary;
 }
