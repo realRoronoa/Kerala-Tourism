@@ -388,6 +388,11 @@ def analyze_trip(request: AnalyzeTripRequest):
 
     for leg in raw_legs:
         leg_pings = leg.get("pings", [])
+        
+        origin_lat = leg_pings[0]["lat"] if leg_pings else 0.0
+        origin_lon = leg_pings[0]["lon"] if leg_pings else 0.0
+        dest_lat = leg_pings[-1]["lat"] if leg_pings else 0.0
+        dest_lon = leg_pings[-1]["lon"] if leg_pings else 0.0
 
         if len(leg_pings) < 2:
             # Too few pings to classify meaningfully — mark as unknown
@@ -396,6 +401,10 @@ def analyze_trip(request: AnalyzeTripRequest):
                 "leg_type":                leg["leg_type"],
                 "from_stop_id":            leg["from_stop_id"],
                 "to_stop_id":              leg["to_stop_id"],
+                "origin_lat":              origin_lat,
+                "origin_lon":              origin_lon,
+                "dest_lat":                dest_lat,
+                "dest_lon":                dest_lon,
                 "start_time":              leg["start_time"],
                 "end_time":                leg["end_time"],
                 "ping_count":              leg["ping_count"],
@@ -422,6 +431,10 @@ def analyze_trip(request: AnalyzeTripRequest):
                 "leg_type":              leg["leg_type"],
                 "from_stop_id":          leg["from_stop_id"],
                 "to_stop_id":            leg["to_stop_id"],
+                "origin_lat":            origin_lat,
+                "origin_lon":            origin_lon,
+                "dest_lat":              dest_lat,
+                "dest_lon":              dest_lon,
                 "start_time":            leg["start_time"],
                 "end_time":              leg["end_time"],
                 "ping_count":            leg["ping_count"],
@@ -436,6 +449,10 @@ def analyze_trip(request: AnalyzeTripRequest):
                 "leg_type":                leg["leg_type"],
                 "from_stop_id":            leg["from_stop_id"],
                 "to_stop_id":              leg["to_stop_id"],
+                "origin_lat":              origin_lat,
+                "origin_lon":              origin_lon,
+                "dest_lat":                dest_lat,
+                "dest_lon":                dest_lon,
                 "start_time":              leg["start_time"],
                 "end_time":                leg["end_time"],
                 "ping_count":              leg["ping_count"],
