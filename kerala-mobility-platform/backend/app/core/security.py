@@ -59,7 +59,7 @@ try:
 except Exception as exc:
     print(f"[Firebase Init Notice] Running in mock/fallback mode: {exc}")
 
-SECRET_KEY = "NATPAC_KERALA_MOBILITY_SECRET_KEY_JWT_2026"
+SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 

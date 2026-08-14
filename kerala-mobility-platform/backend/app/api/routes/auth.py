@@ -131,12 +131,8 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
 def get_current_user_profile(current_user: User = Depends(get_current_user)):
     """
     Returns profile information for the currently authenticated user.
+    Note: get_current_user dependency already raises HTTP 401 if the token is missing or invalid.
     """
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
     return current_user
 
 

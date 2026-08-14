@@ -9,6 +9,14 @@ import { getWeather, WeatherData } from '../api/weather';
 import { getUnverifiedTrips, Trip } from '../api/trips';
 import { getUserId } from '../api/client';
 
+/* ── Types ── */
+interface Place {
+  id: string;
+  name: string;
+  icon: string;
+  traffic: string;
+}
+
 /* ── Quick Actions ── */
 const QUICK_ACTIONS = [
   { icon: 'clock' as const, label: 'History', bg: '#1B4332', route: 'Trips' },
@@ -60,11 +68,11 @@ export default function HomeScreen() {
   const [showWeather, setShowWeather] = useState(true);
   
   // Quick Access Chips State
-  const [places, setPlaces] = useState([
+  const [places, setPlaces] = useState<Place[]>([
     { id: 'home', name: 'Home', icon: 'home', traffic: 'green' },
     { id: 'work', name: 'Technopark', icon: 'briefcase', traffic: 'gold' },
   ]);
-  const [selectedPlace, setSelectedPlace] = useState<any>(null); // For action sheet
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
   const [newPlaceName, setNewPlaceName] = useState('');
 
