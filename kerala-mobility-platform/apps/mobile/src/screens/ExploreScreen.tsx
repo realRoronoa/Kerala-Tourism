@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import SectionHeading from '../components/SectionHeading';
 import { getSpots, KeralaSpot, generateItinerary, GeneratedItinerary } from '../api/explore';
 import { searchLocation, SearchLocationResult } from '../api/weather';
+import FeedbackCard from '../components/FeedbackCard';
 
 type TabOption = 'Discovery' | 'Your Impact';
 
@@ -122,20 +123,22 @@ export default function ExploreScreen() {
     <View className="flex-1 bg-kerala-surface">
       <Header showSearch={false} />
 
-      {/* Tab switcher */}
-      <View className="flex-row bg-white border-b border-kerala-border">
-        {(['Discovery', 'Your Impact'] as TabOption[]).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            className={`flex-1 items-center py-3 ${activeTab === tab ? 'border-b-2 border-kerala-green' : ''}`}
-          >
-            <Text className={`font-inter-semibold text-sm ${activeTab === tab ? 'text-kerala-green' : 'text-gray-400'}`}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
+      {/* Tab switcher (Segmented Pills) */}
+      <View className="px-5 py-3 bg-white border-b border-gray-100">
+        <View className="flex-row bg-gray-100 rounded-full p-1">
+          {(['Discovery', 'Your Impact'] as TabOption[]).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              className={`flex-1 items-center py-2.5 rounded-full ${activeTab === tab ? 'bg-white shadow-sm' : ''}`}
+            >
+              <Text className={`font-inter-semibold text-[13px] ${activeTab === tab ? 'text-gray-900' : 'text-gray-500'}`}>{tab}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {activeTab === 'Discovery' ? (
           <>
             {/* Search bar */}
@@ -183,16 +186,16 @@ export default function ExploreScreen() {
             <View className="px-5 mt-4">
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                 {CATEGORIES.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setSelectedCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full border ${
-                      selectedCategory === cat
-                        ? 'bg-kerala-green border-kerala-green'
-                        : 'bg-white border-kerala-border'
-                    }`}
-                  >
-                    <Text className={`font-inter-medium text-xs ${selectedCategory === cat ? 'text-white' : 'text-gray-600'}`}>{cat}</Text>
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => setSelectedCategory(cat)}
+                      className={`px-4 py-2 rounded-full border ${
+                        selectedCategory === cat
+                          ? 'bg-[#0B6E4F] border-[#0B6E4F]'
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <Text className={`font-inter-semibold text-[13px] ${selectedCategory === cat ? 'text-white' : 'text-gray-500'}`}>{cat}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -205,18 +208,21 @@ export default function ExploreScreen() {
               {spotsLoading ? (
                 <>{[1, 2, 3].map((i) => <SpotSkeleton key={i} />)}</>
               ) : spotsError ? (
-                <View className="bg-white border border-kerala-border rounded-card p-6 items-center">
-                  <Feather name="wifi-off" size={28} color="#D1D5DB" />
-                  <Text className="font-inter text-sm text-gray-400 mt-2 text-center">Couldn't load destinations. Check your connection.</Text>
-                  <TouchableOpacity onPress={() => fetchSpots(selectedCategory)} className="mt-3 px-4 py-2 bg-kerala-green rounded-full">
-                    <Text className="font-inter-semibold text-xs text-white">Retry</Text>
-                  </TouchableOpacity>
-                </View>
+                <FeedbackCard
+                  iconName="cloud-off"
+                  message="Couldn't load destinations"
+                  subMessage="We couldn't reach the server. Check your connection and try again."
+                  primaryAction={{
+                    label: 'Retry',
+                    onPress: () => fetchSpots(selectedCategory)
+                  }}
+                />
               ) : spots.length === 0 ? (
-                <View className="bg-white border border-kerala-border rounded-card p-6 items-center">
-                  <Feather name="map" size={28} color="#D1D5DB" />
-                  <Text className="font-inter text-sm text-gray-400 mt-2">No spots found for "{selectedCategory}"</Text>
-                </View>
+                <FeedbackCard
+                  iconName="compass"
+                  message={`No spots found for "${selectedCategory}"`}
+                  subMessage="Try a different category or check back later."
+                />
               ) : (
                 <View className="gap-3">
                   {spots.slice(0, 10).map((spot, idx) => (
@@ -269,8 +275,8 @@ export default function ExploreScreen() {
           /* ── Your Impact Tab (static, no real user analytics yet) ── */
           <>
             <View className="px-5 pt-5">
-              <Text className="font-inter-bold text-2xl text-gray-900">Your Impact</Text>
-              <Text className="font-inter text-xs text-gray-500 mt-1 leading-5">A summary of your mobility patterns and their contribution.</Text>
+              <Text className="font-inter-bold text-[26px] text-gray-900">Your Impact</Text>
+              <Text className="font-inter text-[14px] text-gray-500 mt-1 leading-5">A summary of your mobility patterns and their contribution.</Text>
             </View>
             <View className="px-5 mt-5 gap-3">
               {[
@@ -304,15 +310,15 @@ export default function ExploreScreen() {
         )}
       </ScrollView>
 
-      {/* FAB for AI Itinerary */}
+      {/* FAB for Trip Planner */}
       {activeTab === 'Discovery' && (
         <TouchableOpacity
           onPress={() => setShowItineraryModal(true)}
-          className="absolute bottom-6 right-5 bg-kerala-green rounded-full shadow-lg flex-row items-center justify-center"
-          style={{ paddingHorizontal: 20, height: 56, elevation: 5 }}
+          className="absolute right-5 bg-[#0B6E4F] rounded-full shadow-lg flex-row items-center justify-center z-50"
+          style={{ bottom: 24, paddingHorizontal: 20, height: 52, elevation: 8, shadowColor: '#064E3B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 }}
         >
-          <Feather name="map" size={20} color="#FFFFFF" />
-          <Text className="font-inter-semibold text-white text-sm ml-2">AI Trip Planner</Text>
+          <Feather name="navigation" size={16} color="#FFFFFF" />
+          <Text className="font-inter-bold text-white text-[14px] ml-2">Plan a Trip</Text>
         </TouchableOpacity>
       )}
 
@@ -370,8 +376,8 @@ export default function ExploreScreen() {
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <>
-                      <Feather name="cpu" size={20} color="#FFFFFF" />
-                      <Text className="font-inter-semibold text-white ml-2">Generate Magic</Text>
+                      <Feather name="map" size={20} color="#FFFFFF" />
+                      <Text className="font-inter-semibold text-white ml-2">Create Itinerary</Text>
                     </>
                   )}
                 </TouchableOpacity>

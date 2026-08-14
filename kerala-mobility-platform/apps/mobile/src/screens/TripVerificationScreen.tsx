@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import SectionHeading from '../components/SectionHeading';
 import { getUnverifiedTrips, verifyTrip, Trip } from '../api/trips';
 import { getUserId } from '../api/client';
+import FeedbackCard from '../components/FeedbackCard';
 
 const getModeIcon = (mode: string): keyof typeof Feather.glyphMap => {
   switch (mode?.toLowerCase()) {
@@ -162,11 +163,11 @@ export default function TripHistoryScreen() {
     <View className="flex-1 bg-kerala-surface">
       <Header showSearch={false} />
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         {/* Page Title */}
         <View className="px-5 pt-5 pb-1">
-          <Text className="font-inter-bold text-2xl text-gray-900">Trip History</Text>
-          <Text className="font-inter text-sm text-gray-400 mt-1">Review your past and pending journeys.</Text>
+          <Text className="font-inter-bold text-[26px] text-gray-900">Trip History</Text>
+          <Text className="font-inter text-[14px] text-gray-500 mt-1">Review your past and pending journeys.</Text>
         </View>
 
         {/* Toast */}
@@ -183,16 +184,15 @@ export default function TripHistoryScreen() {
               <Text className="font-inter text-sm text-gray-400 mt-3">Loading your trips...</Text>
             </View>
           ) : pendingTrips.length === 0 ? (
-            <View className="bg-white border border-kerala-border rounded-card p-8 items-center">
-              <Feather name="check-circle" size={40} color="#0B6E4F" style={{ opacity: 0.3 }} />
-              <Text className="font-inter-bold text-base text-gray-700 mt-4">No Real Trips Logged Yet</Text>
-              <Text className="font-inter text-sm text-gray-400 mt-2 text-center leading-5">
-                Once the app detects your transit trips, they'll appear here for verification.
-              </Text>
-              <TouchableOpacity onPress={fetchTrips} className="mt-4 px-5 py-2 bg-kerala-green rounded-full">
-                <Text className="font-inter-semibold text-sm text-white">Refresh</Text>
-              </TouchableOpacity>
-            </View>
+            <FeedbackCard
+              iconName="check-circle"
+              message="No Real Trips Logged Yet"
+              subMessage="Once the app detects your transit trips, they'll appear here for verification."
+              primaryAction={{
+                label: 'Refresh',
+                onPress: fetchTrips
+              }}
+            />
           ) : (
             pendingTrips.map((trip) => (
               <UnverifiedTripCard key={trip.id} trip={trip} onVerify={handleVerified} />
@@ -202,16 +202,16 @@ export default function TripHistoryScreen() {
 
         {/* ── End message ── */}
         {!loading && (
-          <View className="px-5 mt-6 items-center">
-            <Text className="font-inter text-xs text-gray-400 text-center leading-4">
+          <View className="px-5 mt-auto items-center pt-8">
+            <Text className="font-inter text-xs text-gray-500 text-center leading-4">
               End of 30-day history. For older trips, download your full travel log.
             </Text>
             <TouchableOpacity
               onPress={handleDownloadCSV}
-              className="mt-3 border border-kerala-border rounded-card px-5 py-2.5 active:bg-gray-50"
+              className="mt-4 w-full border border-gray-200 rounded-full py-3.5 items-center justify-center bg-white"
               activeOpacity={0.7}
             >
-              <Text className="font-inter-semibold text-sm text-gray-800">Download History</Text>
+              <Text className="font-inter-semibold text-[14px] text-gray-800">Download History</Text>
             </TouchableOpacity>
           </View>
         )}

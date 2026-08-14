@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  View, Text, Pressable, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { registerUser } from '../api/auth';
 import { storeToken } from '../api/client';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import FormInput from '../components/FormInput';
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
@@ -17,9 +17,8 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
   // Format 10-digit number as "98765 43210"
   const formatDisplayNumber = (val: string) => {
@@ -39,15 +38,15 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setError(null);
     if (!name.trim()) {
-      setError('Please enter your full name.');
+      setError({ field: 'name', message: 'Please enter your full name.' });
       return;
     }
     if (mobile.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.');
+      setError({ field: 'mobile', message: 'Please enter a valid 10-digit mobile number.' });
       return;
     }
     if (!email.includes('@') || !email.includes('.')) {
-      setError('Please enter a valid email address.');
+      setError({ field: 'email', message: 'Please enter a valid email address.' });
       return;
     }
 
@@ -69,7 +68,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white select-none items-center" style={{ touchAction: 'pan-y' }}>
+    <View className="flex-1 bg-white select-none items-center" style={{ overflow: 'hidden', height: Platform.OS === 'web' ? '100vh' : '100%' }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 justify-between w-full"
@@ -101,11 +100,9 @@ export default function RegisterScreen() {
         </View>
 
         {/* ── 2. Uber Signature Form Section ── */}
-        <ScrollView
+        <View
           className="flex-1"
-          contentContainerStyle={{ paddingTop: 20, paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          style={{ paddingTop: 20, paddingBottom: 24 }}
         >
           {/* Headline */}
           <Text className="font-inter-bold text-[26px] text-black tracking-tight leading-8">
@@ -116,127 +113,55 @@ export default function RegisterScreen() {
           </Text>
 
           {/* Form Fields Stack */}
-          <View className="mt-7 gap-4">
+          <View className="mt-7">
             {/* ── 1. Full Name ── */}
-            <View>
-              <Text className="font-inter-semibold text-xs text-gray-700 mb-1.5 ml-1">
-                Full Name
-              </Text>
-              <View
-                className={`flex-1 flex-row items-center justify-between bg-white rounded-2xl px-4 h-14 border-[1.5px] ${
-                  focusedField === 'name' ? 'border-black' : 'border-gray-300'
-                }`}
-              >
-                <View className="flex-1 h-full justify-center">
-                  <TextInput
-                    value={name}
-                    onChangeText={(text) => { setError(null); setName(text); }}
-                    onFocus={() => setFocusedField('name')}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="e.g. Adarsh Nair"
-                    placeholderTextColor="#757575"
-                    autoCapitalize="words"
-                    editable={!loading}
-                    className="w-full font-inter-semibold text-[16px] text-black h-full"
-                    style={{ outlineStyle: 'none', padding: 0 } as any}
-                  />
-                </View>
-                {name.trim().length > 1 && (
-                  <Animated.View entering={FadeIn} exiting={FadeOut} className="items-center justify-center pl-2 flex-shrink-0">
-                    <Feather name="check-circle" size={24} color="#0B6E4F" />
-                  </Animated.View>
-                )}
-              </View>
-            </View>
+            <FormInput
+              label="Full Name"
+              value={name}
+              onChangeText={(text) => { setError(null); setName(text); }}
+              placeholder="e.g. Adarsh Nair"
+              autoCapitalize="words"
+              editable={!loading}
+              isValid={name.trim().length > 1}
+              error={error?.field === 'name' ? error.message : null}
+            />
 
             {/* ── 2. Mobile Number with Country Pill ── */}
-            <View>
-              <Text className="font-inter-semibold text-xs text-gray-700 mb-1.5 ml-1">
-                Mobile Number
-              </Text>
-              <View className="flex-row items-center gap-2.5">
-                {/* Country Code Pill */}
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  className="flex-row items-center bg-[#EEEEEE] rounded-2xl px-3.5 h-14 border border-transparent"
-                >
-                  <Text className="text-xl mr-1.5">🇮🇳</Text>
-                  <Text className="font-inter-bold text-base text-black mr-1">+91</Text>
-                  <Feather name="chevron-down" size={14} color="#555555" />
-                </TouchableOpacity>
-
-                {/* Mobile Input */}
-                <View
-                  className={`flex-1 flex-row items-center justify-between bg-white rounded-2xl px-4 h-14 border-[1.5px] ${
-                    focusedField === 'mobile' ? 'border-black' : 'border-gray-300'
-                  }`}
-                >
-                  <View className="flex-1 h-full justify-center">
-                    <TextInput
-                      value={formatDisplayNumber(mobile)}
-                      onChangeText={handleMobileChange}
-                      onFocus={() => setFocusedField('mobile')}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Mobile number"
-                      placeholderTextColor="#757575"
-                      keyboardType="number-pad"
-                      maxLength={11}
-                      editable={!loading}
-                      className="w-full font-inter-semibold text-[16px] text-black h-full"
-                      style={{ outlineStyle: 'none', padding: 0 } as any}
-                    />
-                  </View>
-                  {mobile.length === 10 && (
-                    <Animated.View entering={FadeIn} exiting={FadeOut} className="items-center justify-center pl-2 flex-shrink-0">
-                      <Feather name="check-circle" size={24} color="#0B6E4F" />
-                    </Animated.View>
-                  )}
-                </View>
-              </View>
-            </View>
+            <FormInput
+              label="Mobile Number"
+              showCountryCode
+              value={formatDisplayNumber(mobile)}
+              onChangeText={handleMobileChange}
+              placeholder="Mobile number"
+              keyboardType="number-pad"
+              maxLength={11}
+              editable={!loading}
+              isValid={mobile.length === 10}
+              error={error?.field === 'mobile' ? error.message : null}
+            />
 
             {/* ── 3. Email Address ── */}
-            <View>
-              <Text className="font-inter-semibold text-xs text-gray-700 mb-1.5 ml-1">
-                Email Address
-              </Text>
-              <View
-                className={`flex-1 flex-row items-center justify-between bg-white rounded-2xl px-4 h-14 border-[1.5px] ${
-                  focusedField === 'email' ? 'border-black' : 'border-gray-300'
-                }`}
-              >
-                <View className="flex-1 h-full justify-center">
-                  <TextInput
-                    value={email}
-                    onChangeText={(text) => { setError(null); setEmail(text); }}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    placeholder="name@example.com"
-                    placeholderTextColor="#757575"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!loading}
-                    className="w-full font-inter-semibold text-[16px] text-black h-full"
-                    style={{ outlineStyle: 'none', padding: 0 } as any}
-                  />
-                </View>
-                {email.includes('@') && email.includes('.') && (
-                  <Animated.View entering={FadeIn} exiting={FadeOut} className="items-center justify-center pl-2 flex-shrink-0">
-                    <Feather name="check-circle" size={24} color="#0B6E4F" />
-                  </Animated.View>
-                )}
-              </View>
-            </View>
-
-            {/* Inline Error Notice */}
-            {error && (
+            <FormInput
+              label="Email Address"
+              value={email}
+              onChangeText={(text) => { setError(null); setEmail(text); }}
+              placeholder="name@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!loading}
+              isValid={email.includes('@') && email.includes('.')}
+              error={error?.field === 'email' ? error.message : null}
+            />
+            
+            {/* General Error Notice */}
+            {error && !['name', 'mobile', 'email'].includes(error.field) && (
               <View className="flex-row items-center mt-1 px-1">
                 <Feather name="alert-circle" size={14} color="#EF4444" />
-                <Text className="font-inter-medium text-xs text-red-500 ml-1.5 flex-1">{error}</Text>
+                <Text className="font-inter-medium text-xs text-red-500 ml-1.5 flex-1">{error.message}</Text>
               </View>
             )}
           </View>
-        </ScrollView>
+        </View>
 
         {/* ── 3. Bottom Pinned Uber-Style Continue Button & Footer ── */}
         <View className="w-full pt-2">
@@ -299,3 +224,5 @@ export default function RegisterScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({});

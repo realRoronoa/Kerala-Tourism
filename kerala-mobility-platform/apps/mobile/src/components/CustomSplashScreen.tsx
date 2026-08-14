@@ -150,7 +150,7 @@ export default function CustomSplashScreen({ onFinish }: { onFinish: () => void 
 
         {/* Animated Tagline */}
         <Animated.Text style={[styles.tagline, { color: MUTED_GRAY }, taglineStyle]}>
-          Travel Smarter. Travel Verified.
+          Your Transit. Verified.
         </Animated.Text>
 
       </View>

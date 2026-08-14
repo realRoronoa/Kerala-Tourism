@@ -23,7 +23,7 @@ export async function getSpots(preference?: string): Promise<KeralaSpot[]> {
   return apiFetch<KeralaSpot[]>(`/api/v1/itinerary/spots${query}`);
 }
 
-// ─── AI Itinerary Generation ──────────────────────────────────────────────────
+// ─── Itinerary Generation ──────────────────────────────────────────────────
 
 export interface ItineraryRequest {
   user_request: string;

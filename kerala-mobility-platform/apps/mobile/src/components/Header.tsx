@@ -93,11 +93,11 @@ export default function Header({
   };
 
   return (
-    <View className="bg-kerala-green" style={{ paddingTop: insets.top }}>
+    <View className="bg-white border-b border-gray-100" style={{ paddingTop: insets.top }}>
       {/* Top row */}
       <View className="flex-row items-center justify-between px-4 py-3">
         {/* Wordmark */}
-        <Text className="font-inter-bold text-lg text-white tracking-wide">
+        <Text className="font-inter-bold text-lg text-gray-900 tracking-wide">
           Kerala Mobility
         </Text>
 
@@ -106,28 +106,28 @@ export default function Header({
           {/* Notification bell */}
           <TouchableOpacity
             onPress={handleNotification}
-            className="w-9 h-9 rounded-full bg-kerala-gold items-center justify-center"
+            className="w-9 h-9 rounded-full bg-[#F3F4F6] items-center justify-center"
             accessibilityLabel="Notifications"
           >
-            <Feather name="bell" size={16} color="#FFFFFF" />
+            <Feather name="bell" size={16} color="#1F2937" />
           </TouchableOpacity>
 
           {/* Language toggle */}
           <TouchableOpacity
             onPress={handleLanguage}
-            className="w-9 h-9 rounded-full bg-kerala-green items-center justify-center border-2 border-white/50"
+            className="w-9 h-9 rounded-full bg-[#F3F4F6] items-center justify-center"
             accessibilityLabel="Language toggle"
           >
-            <Text className="font-inter-bold text-[11px] text-white">{lang}</Text>
+            <Text className="font-inter-bold text-[11px] text-[#1F2937]">{lang}</Text>
           </TouchableOpacity>
 
           {/* Profile / Hamburger */}
           <TouchableOpacity
             onPress={onMenuPress || (() => setIsSettingsOpen(true))}
-            className="w-9 h-9 rounded-full bg-kerala-green items-center justify-center border-2 border-white/50"
+            className="w-9 h-9 rounded-full bg-[#F3F4F6] items-center justify-center"
             accessibilityLabel="Open menu"
           >
-            <Feather name="user" size={14} color="#FFFFFF" />
+            <Feather name="user" size={14} color="#1F2937" />
           </TouchableOpacity>
         </View>
       </View>

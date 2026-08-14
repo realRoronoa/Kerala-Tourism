@@ -36,15 +36,15 @@ export default function ProfileScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Page Title */}
         <View className="px-5 pt-5 pb-1">
-          <Text className="font-inter-bold text-2xl text-gray-900">
+          <Text className="font-inter-bold text-[26px] text-gray-900">
             Privacy Center
           </Text>
-          <Text className="font-inter text-xs text-gray-500 mt-2 leading-5">
+          <Text className="font-inter text-[14px] text-gray-500 mt-2 leading-5">
             Control how we use your data to improve public transport services.
           </Text>
         </View>
@@ -57,54 +57,63 @@ export default function ProfileScreen() {
           <View className="gap-6 mt-2">
             {/* Location Tracking */}
             <View className="flex-row items-center justify-between">
+              <View className="w-10 h-10 rounded-full bg-[#F3F4F6] items-center justify-center mr-3">
+                <Feather name="map-pin" size={16} color="#1F2937" />
+              </View>
               <View className="flex-1 mr-4">
                 <Text className="font-inter-semibold text-sm text-gray-900">
                   Location Tracking
                 </Text>
-                <Text className="font-inter text-xs text-gray-400 mt-1 leading-4">
+                <Text className="font-inter text-xs text-gray-500 mt-1 leading-4">
                   Used for real-time bus tracking and route suggestions.
                 </Text>
               </View>
               <Switch
                 value={locationEnabled}
                 onValueChange={setLocationEnabled}
-                trackColor={{ false: '#D9DADB', true: '#1B4332' }}
+                trackColor={{ false: '#D9DADB', true: '#0B6E4F' }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {/* Trip History */}
             <View className="flex-row items-center justify-between">
+              <View className="w-10 h-10 rounded-full bg-[#F3F4F6] items-center justify-center mr-3">
+                <Feather name="clock" size={16} color="#1F2937" />
+              </View>
               <View className="flex-1 mr-4">
                 <Text className="font-inter-semibold text-sm text-gray-900">
                   Trip History
                 </Text>
-                <Text className="font-inter text-xs text-gray-400 mt-1 leading-4">
+                <Text className="font-inter text-xs text-gray-500 mt-1 leading-4">
                   Store your past trips for easier future planning.
                 </Text>
               </View>
               <Switch
                 value={historyEnabled}
                 onValueChange={setHistoryEnabled}
-                trackColor={{ false: '#D9DADB', true: '#1B4332' }}
+                trackColor={{ false: '#D9DADB', true: '#0B6E4F' }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             {/* Background Tracking */}
             <View className="flex-row items-center justify-between">
+              <View className="w-10 h-10 rounded-full bg-[#F3F4F6] items-center justify-center mr-3">
+                <Feather name="activity" size={16} color="#1F2937" />
+              </View>
               <View className="flex-1 mr-4">
                 <Text className="font-inter-semibold text-sm text-gray-900">
                   Background Tracking
                 </Text>
-                <Text className="font-inter text-xs text-gray-400 mt-1 leading-4">
+                <Text className="font-inter text-xs text-gray-500 mt-1 leading-4">
                   Allow app to update location while not in use for better accuracy.
                 </Text>
               </View>
               <Switch
                 value={backgroundEnabled}
                 onValueChange={setBackgroundEnabled}
-                trackColor={{ false: '#D9DADB', true: '#1B4332' }}
+                trackColor={{ false: '#D9DADB', true: '#0B6E4F' }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -250,6 +259,21 @@ export default function ProfileScreen() {
                 <Feather name="sliders" size={16} color="#374151" />
                 <Text className="font-inter-medium text-sm text-gray-900 ml-3">
                   Manage Permissions (OS Settings)
+                </Text>
+              </View>
+              <Feather name="external-link" size={16} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* View Privacy Policy */}
+            <TouchableOpacity
+              className="flex-row items-center justify-between py-4"
+              onPress={() => Linking.openURL('https://keralamobility.in/privacy')}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center">
+                <Feather name="file-text" size={16} color="#374151" />
+                <Text className="font-inter-medium text-sm text-gray-900 ml-3">
+                  View Privacy Policy
                 </Text>
               </View>
               <Feather name="external-link" size={16} color="#9CA3AF" />
