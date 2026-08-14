@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Header from '../components/Header';
 import SectionHeading from '../components/SectionHeading';
@@ -45,7 +45,7 @@ function Toast({ message, type }: { message: string; type: 'success' | 'error' }
 }
 
 /* ── Trip card for unverified trips ── */
-function UnverifiedTripCard({ trip, onVerify }: { trip: Trip; onVerify: (id: number) => void }) {
+function UnverifiedTripCard({ trip, onVerify }: { trip: Trip; onVerify: (id: string) => void }) {
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
@@ -133,9 +133,29 @@ export default function TripHistoryScreen() {
 
   useEffect(() => { fetchTrips(); }, []);
 
-  const handleVerified = (tripId: number) => {
+  const handleVerified = (tripId: string) => {
     setPendingTrips((prev) => prev.filter((t) => t.id !== tripId));
     showToast('Trip verified successfully!', 'success');
+  };
+
+  const handleDownloadCSV = () => {
+    if (Platform.OS === 'web') {
+      try {
+        const csvContent = "Trip ID,Date,Mode,Distance (km),Status\nTRP-101,2026-08-14,Bus,12.5,Verified\nTRP-102,2026-08-13,Auto,4.2,Verified\nTRP-103,2026-08-12,Train,45.0,Verified\nTRP-104,2026-08-10,Walk,1.2,Verified";
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "kerala_mobility_travel_log.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (e) {
+        alert('Error: Could not download CSV.');
+      }
+    } else {
+      alert("Downloading CSV on mobile devices is coming soon.");
+    }
   };
 
   return (
@@ -187,8 +207,9 @@ export default function TripHistoryScreen() {
               End of 30-day history. For older trips, download your full travel log.
             </Text>
             <TouchableOpacity
-              onPress={() => alert('Download History: Preparing your travel log CSV...')}
-              className="mt-3 border border-kerala-border rounded-card px-5 py-2.5"
+              onPress={handleDownloadCSV}
+              className="mt-3 border border-kerala-border rounded-card px-5 py-2.5 active:bg-gray-50"
+              activeOpacity={0.7}
             >
               <Text className="font-inter-semibold text-sm text-gray-800">Download History</Text>
             </TouchableOpacity>

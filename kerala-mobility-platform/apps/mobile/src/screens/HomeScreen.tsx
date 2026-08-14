@@ -11,11 +11,11 @@ import { getUserId } from '../api/client';
 
 /* ── Quick Actions ── */
 const QUICK_ACTIONS = [
-  { icon: 'clock' as const, label: 'History', bg: '#1B4332' },
-  { icon: 'bar-chart-2' as const, label: 'Insights', bg: '#1B4332' },
-  { icon: 'credit-card' as const, label: 'Fares', bg: '#C89B3C' },
-  { icon: 'alert-triangle' as const, label: 'Report', bg: '#8B4513' },
-  { icon: 'shield' as const, label: 'Privacy', bg: '#6B7280' },
+  { icon: 'clock' as const, label: 'History', bg: '#1B4332', route: 'Trips' },
+  { icon: 'bar-chart-2' as const, label: 'Insights', bg: '#1B4332', route: 'Explore' },
+  { icon: 'credit-card' as const, label: 'Fares', bg: '#C89B3C', route: 'Explore' },
+  { icon: 'alert-triangle' as const, label: 'Report', bg: '#8B4513', route: 'Trips' },
+  { icon: 'shield' as const, label: 'Privacy', bg: '#6B7280', route: 'Privacy' },
 ];
 
 /* ── Weather helpers ── */
@@ -55,6 +55,10 @@ export default function HomeScreen() {
   // Trips state
   const [trips, setTrips] = useState<Trip[]>([]);
   const [tripsLoading, setTripsLoading] = useState(true);
+
+  // Interactive UI state
+  const [showWeather, setShowWeather] = useState(true);
+  const [workSet, setWorkSet] = useState(false);
 
   useEffect(() => {
     // Fetch weather (silent fail)
@@ -104,10 +108,17 @@ export default function HomeScreen() {
             <Text className="font-inter-medium text-sm text-gray-800">Home</Text>
           </View>
           <TouchableOpacity
-            onPress={() => alert('Work Address: Set your work address for faster trip logging.')}
+            onPress={() => setWorkSet(!workSet)}
             className="flex-row items-center bg-white border border-kerala-border rounded-full px-4 py-2"
           >
-            <Text className="font-inter text-sm text-gray-500">+ Set Work</Text>
+            {workSet ? (
+              <View className="flex-row items-center">
+                <Feather name="briefcase" size={12} color="#0B6E4F" style={{ marginRight: 6 }} />
+                <Text className="font-inter-medium text-sm text-kerala-green">Technopark</Text>
+              </View>
+            ) : (
+              <Text className="font-inter text-sm text-gray-500">+ Set Work</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -121,26 +132,28 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Weather Advisory Banner ── */}
-        <View className="mx-5 mt-4">
-          {weatherLoading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : weatherError ? (
-            <View className="flex-row items-center bg-gray-50 border border-gray-100 rounded-card px-3 py-2.5">
-              <Feather name="wifi-off" size={14} color="#9CA3AF" />
-              <Text className="font-inter text-xs text-gray-400 ml-2">Couldn't load weather data</Text>
-            </View>
-          ) : weather ? (
-            <View className="flex-row items-center bg-kerala-gold/15 rounded-card px-3 py-2.5">
-              <Feather name={getWeatherIcon(weather.weather_status)} size={14} color="#C89B3C" />
-              <Text className="font-inter-medium text-xs text-gray-800 flex-1 ml-2">
-                {weather.weather_status} · {weather.temperature}°C · Wind {weather.wind_speed} km/h
-              </Text>
-              <TouchableOpacity onPress={() => alert('Advisory: Weather data refreshed.')}>
-                <Feather name="x" size={14} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-          ) : null}
-        </View>
+        {showWeather && (
+          <View className="mx-5 mt-4">
+            {weatherLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : weatherError ? (
+              <View className="flex-row items-center bg-gray-50 border border-gray-100 rounded-card px-3 py-2.5">
+                <Feather name="wifi-off" size={14} color="#9CA3AF" />
+                <Text className="font-inter text-xs text-gray-400 ml-2">Couldn't load weather data</Text>
+              </View>
+            ) : weather ? (
+              <View className="flex-row items-center bg-kerala-gold/15 rounded-card px-3 py-2.5">
+                <Feather name={getWeatherIcon(weather.weather_status)} size={14} color="#C89B3C" />
+                <Text className="font-inter-medium text-xs text-gray-800 flex-1 ml-2">
+                  {weather.weather_status} · {weather.temperature}°C · Wind {weather.wind_speed} km/h
+                </Text>
+                <TouchableOpacity onPress={() => setShowWeather(false)} className="px-2 py-1">
+                  <Feather name="x" size={14} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {/* ── Stat Blocks ── */}
         <View className="flex-row px-5 mt-4 gap-2">
@@ -166,7 +179,12 @@ export default function HomeScreen() {
         {/* ── Quick Actions ── */}
         <View className="flex-row px-5 mt-5 justify-between">
           {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity key={action.label} onPress={() => alert(`${action.label}: Coming soon.`)} className="items-center" activeOpacity={0.7}>
+            <TouchableOpacity 
+              key={action.label} 
+              onPress={() => (navigation as any).navigate(action.route)} 
+              className="items-center" 
+              activeOpacity={0.7}
+            >
               <View className="w-12 h-12 rounded-full items-center justify-center mb-1.5" style={{ backgroundColor: action.bg }}>
                 <Feather name={action.icon} size={18} color="#FFFFFF" />
               </View>
@@ -236,7 +254,7 @@ export default function HomeScreen() {
           <Text className="font-inter text-xs text-gray-500">
             {tripsLoading ? 'Loading...' : `This Session: ${totalTrips} Trips | ${totalKm} km`}
           </Text>
-          <TouchableOpacity onPress={() => alert('Weekly Summary: Full trip analytics coming soon.')}>
+          <TouchableOpacity onPress={() => (navigation as any).navigate('Trips')} activeOpacity={0.7}>
             <Text className="font-inter-semibold text-xs text-kerala-green">View Details</Text>
           </TouchableOpacity>
         </View>

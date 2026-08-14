@@ -36,12 +36,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
         <NavigationContainer>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <AppNavigator />
         </NavigationContainer>
-        
+
         {!splashFinished && (
           <CustomSplashScreen onFinish={() => setSplashFinished(true)} />
         )}
