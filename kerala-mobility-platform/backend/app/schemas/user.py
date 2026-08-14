@@ -7,6 +7,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
+    mobile_number: Optional[str] = None
     role: Optional[str] = "user"
 
 
@@ -25,6 +26,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     full_name: Optional[str] = None
+    mobile_number: Optional[str] = None
     role: str
     created_at: datetime
     is_active: bool

@@ -69,12 +69,36 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name,
-        role="user"  # Public signups are strictly traveler role
+        mobile_number=payload.mobile_number,
+        role="user"
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.post("/user-login", response_model=Token)
+def login_traveler(payload: UserLogin, db: Session = Depends(get_db)):
+    """
+    Login endpoint for mobile traveler users (email or mobile number + password).
+    """
+    query_str = payload.email.strip()
+    stmt = select(User).where(
+        (User.email == query_str) |
+        (User.mobile_number == query_str) |
+        (User.email == f"{query_str}@keralamobility.in")
+    )
+    user = db.scalar(stmt)
+
+    if not user or not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email/mobile number or password."
+        )
+
+    access_token = create_access_token(subject=user.id)
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/login", response_model=Token)

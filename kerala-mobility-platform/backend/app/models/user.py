@@ -12,6 +12,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     full_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    mobile_number: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     role: Mapped[str] = mapped_column(String, default="user", nullable=False)
     device_token_hash: Mapped[Optional[str]] = mapped_column(String, unique=True, index=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
