@@ -4,13 +4,13 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult }
 // ─── Firebase Web & Mobile SDK Configuration ──────────────────────────────
 // Project: kerala-tourism-e36df
 export const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "AIzaSyB0KYMvMIugDPoS-91KRaoiC3SVuxIucjI",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "",
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "kerala-tourism-e36df.firebaseapp.com",
   projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "kerala-tourism-e36df",
   storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "kerala-tourism-e36df.firebasestorage.app",
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "364393472256",
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:364393472256:web:98173baa17b2154c56d3e5",
-  measurementId: "G-SH2N0H3VKX"
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "",
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
 // Initialize Firebase App
