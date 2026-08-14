@@ -13,9 +13,21 @@ export const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
-// Initialize Firebase App
-export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-export const auth = getAuth(app);
+// Initialize Firebase App safely
+let appInstance: any = null;
+let authInstance: any = null;
+
+try {
+  if (firebaseConfig.apiKey) {
+    appInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    authInstance = getAuth(appInstance);
+  }
+} catch (e) {
+  console.warn('[Firebase Init Notice] Running in mock/offline auth mode:', e);
+}
+
+export const app = appInstance;
+export const auth = authInstance;
 
 // Global confirmation result reference for Phone Auth OTP
 let _confirmationResult: ConfirmationResult | null = null;
