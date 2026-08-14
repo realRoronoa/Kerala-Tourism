@@ -1,0 +1,30 @@
+# Render Blueprint Configuration for Kerala Mobility Platform
+services:
+  # 1. Core Backend Service
+  - type: web
+    name: kerala-backend-api
+    env: python
+    plan: free
+    buildCommand: cd kerala-mobility-platform/backend && pip install -r requirements.txt
+    startCommand: cd kerala-mobility-platform/backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PROJECT_NAME
+        value: "Kerala Mobility Platform"
+      - key: DATABASE_URL
+        value: "sqlite:///./kerala_mobility.db"
+      - key: ML_SERVICE_URL
+        fromService:
+          type: web
+          name: kerala-ml-service
+          property: host
+
+  # 2. ML Microservice
+  - type: web
+    name: kerala-ml-service
+    env: python
+    plan: free
+    buildCommand: cd kerala-mobility-platform/ml_service && pip install -r requirements.txt
+    startCommand: cd kerala-mobility-platform/ml_service && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
