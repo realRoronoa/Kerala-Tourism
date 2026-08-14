@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../apiConfig';
 
 interface ModeShare {
   mode: string;
@@ -21,7 +22,7 @@ const ModeSharePanel: React.FC = () => {
   useEffect(() => {
     const fetchModeSplit = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/analytics/mode-split');
+        const response = await fetch(`${API_BASE_URL}/api/v1/analytics/mode-split`);
         if (response.ok) {
           const result = await response.json();
           // Assuming result is an array of { mode: "...", percentage: 42 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, CheckCircle, MapPin } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 interface SummaryData {
   total_trips: number | string;
@@ -14,7 +15,7 @@ const HeroStatsBanner: React.FC = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/analytics/summary');
+        const response = await fetch(`${API_BASE_URL}/api/v1/analytics/summary`);
         if (response.ok) {
           const result = await response.json();
           setData(result);
