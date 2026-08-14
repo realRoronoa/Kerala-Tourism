@@ -6,16 +6,16 @@ const LogoHeader: React.FC = () => {
       {/* Left side: Emblems and Title */}
       <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
         {/* Placeholder for State Emblem & Kerala Govt Logo */}
-        <div className="flex gap-4 items-center justify-center">
+        <div className="flex gap-4 sm:gap-6 items-center justify-center">
           <img 
             src="/emblem-india.svg" 
             alt="State Emblem of India" 
-            className="h-20 w-auto object-contain"
+            className="h-12 sm:h-16 md:h-20 w-auto object-contain"
           />
           <img 
             src="/kerala-logo.png" 
             alt="Kerala Government Logo" 
-            className="h-20 w-auto object-contain"
+            className="h-12 sm:h-16 md:h-20 w-auto object-contain"
           />
         </div>
         <div className="flex flex-col border-t-2 md:border-t-0 md:border-l-2 border-gray-200 pt-3 md:pt-0 pl-0 md:pl-6 w-full max-w-lg">
