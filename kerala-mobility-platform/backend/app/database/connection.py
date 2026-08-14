@@ -10,14 +10,18 @@ def create_db_engine(url: str):
     if url.startswith("sqlite"):
         return create_engine(url, connect_args={"check_same_thread": False})
     
-    # Try connecting to PostgreSQL
+    # SQLAlchemy 2.0 dialect compatibility for postgres://
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    # Try connecting to PostgreSQL / Supabase
     try:
         eng = create_engine(url, pool_pre_ping=True)
         with eng.connect() as conn:
-            pass
+            print("[Database] Successfully connected to PostgreSQL / Supabase!")
         return eng
-    except Exception:
-        print("[Database Notice] PostgreSQL server on localhost:5432 unavailable. Using local SQLite database file kerala_mobility.db.")
+    except Exception as exc:
+        print(f"[Database Notice] PostgreSQL connection failed: {exc}. Using local SQLite database file kerala_mobility.db.")
         sqlite_url = "sqlite:///./kerala_mobility.db"
         return create_engine(sqlite_url, connect_args={"check_same_thread": False})
 

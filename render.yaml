@@ -11,7 +11,7 @@ services:
       - key: PROJECT_NAME
         value: "Kerala Mobility Platform"
       - key: DATABASE_URL
-        value: "sqlite:///./kerala_mobility.db"
+        value: "postgresql://postgres.kbdotoiewefizylrjvyc:TQ9FptzutbSX6ThS@aws-0-ap-south-1.pooler.supabase.com:6543/postgres"
       - key: ML_SERVICE_URL
         fromService:
           type: web

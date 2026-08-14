@@ -33,3 +33,17 @@ class TripVerifySchema(BaseModel):
     trip_id: int
     corrected_mode: str
     purpose: Optional[str] = None
+
+
+class TripCreateSchema(BaseModel):
+    user_id: str
+    origin_lat: float
+    origin_lon: float
+    dest_lat: float
+    dest_lon: float
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    predicted_mode: Optional[str] = "Bus"
+    confidence_score: Optional[float] = 0.85
+    purpose: Optional[str] = "Commute"
+
