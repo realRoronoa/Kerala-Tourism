@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, CheckCircle, MapPin } from 'lucide-react';
+import { API_BASE_URL } from '../apiConfig';
 
 interface SummaryData {
   total_trips: number | string;
@@ -14,7 +15,11 @@ const HeroStatsBanner: React.FC = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/analytics/summary');
+        const token = localStorage.getItem('natpac_admin_token');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(`${API_BASE_URL}/api/v1/analytics/summary`, { headers });
         if (response.ok) {
           const result = await response.json();
           setData(result);
