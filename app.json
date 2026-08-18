@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "kerala-mobility",
-    "slug": "kerala-mobility",
+    "name": "Exploro",
+    "slug": "exploro",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "newArchEnabled": true
   }
 }
