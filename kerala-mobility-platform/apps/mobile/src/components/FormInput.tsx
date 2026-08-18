@@ -1,121 +1,77 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TextInputProps,
+} from 'react-native';
+import { Colors } from '../theme/colors';
 
-interface FormInputProps {
+interface FormInputProps extends TextInputProps {
   label: string;
-  error?: string | null;
   isValid?: boolean;
-  showCountryCode?: boolean;
-  [key: string]: any;
+  prefix?: React.ReactNode;
 }
 
 export default function FormInput({
   label,
-  error,
   isValid,
-  showCountryCode,
-  style,
-  onFocus,
-  onBlur,
-  ...rest
+  prefix,
+  ...props
 }: FormInputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
-  const handleFocus = (e: any) => {
-    setIsFocused(true);
-    if (onFocus) onFocus(e);
-  };
-
-  const handleBlur = (e: any) => {
-    setIsFocused(false);
-    if (onBlur) onBlur(e);
-  };
-
-  const hasError = !!error;
-
-  const customTextInputStyle = { outlineStyle: 'none', padding: 0 } as any;
+  const [focused, setFocused] = useState(false);
 
   return (
-    <View className="mb-6">
-      <Text className="font-inter-semibold text-[14px] text-gray-700 mb-2 ml-1">
-        {label}
-      </Text>
-      
-      <View className="flex-row items-center gap-2.5">
-        {showCountryCode && (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            className="flex-row items-center bg-gray-100 rounded-2xl px-3.5 h-[58px] border border-transparent"
-          >
-            <Text className="text-xl mr-1.5">🇮🇳</Text>
-            <Text className="font-inter-bold text-base text-black mr-1">+91</Text>
-            <Feather name="chevron-down" size={14} color="#555555" />
-          </TouchableOpacity>
-        )}
-
-        <View
-          style={[
-            styles.inputContainer,
-            { flex: 1 },
-            { 
-              borderColor: hasError ? '#EF4444' : isFocused ? '#0B6E4F' : '#D1D5DB',
-              borderWidth: isFocused || hasError ? 2 : 1.5,
-              // subtle green glow on focus
-              shadowColor: isFocused && !hasError ? '#0B6E4F' : 'transparent',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: isFocused && !hasError ? 0.2 : 0,
-              shadowRadius: 4,
-              elevation: isFocused && !hasError ? 2 : 0,
-            }
-          ]}
-        >
-          <TextInput
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            placeholderTextColor="#9CA3AF"
-            style={[styles.textInput, customTextInputStyle]}
-            {...rest}
-          />
-          {isValid && !hasError && (
-            <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.checkIconWrapper}>
-              <Feather name="check-circle" size={22} color="#0B6E4F" />
-            </Animated.View>
-          )}
-        </View>
+    <View style={styles.wrapper}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
+        {prefix}
+        <TextInput
+          style={styles.input}
+          placeholderTextColor={Colors.textLight}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          {...props}
+        />
+        {isValid && <Text style={styles.checkmark}>✓</Text>}
       </View>
-
-      {/* Inline Error Notice */}
-      {hasError && (
-        <View className="flex-row items-center mt-1.5 px-1">
-          <Feather name="alert-circle" size={14} color="#EF4444" />
-          <Text className="font-inter-medium text-xs text-red-500 ml-1.5 flex-1">{error}</Text>
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  inputContainer: {
+  wrapper: { marginBottom: 16 },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    height: 58,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.white,
   },
-  textInput: {
+  inputRowFocused: {
+    borderColor: Colors.primary,
+  },
+  input: {
     flex: 1,
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
-    color: '#111827',
+    fontSize: 15,
+    color: Colors.text,
+    paddingVertical: 14,
   },
-  checkIconWrapper: {
+  checkmark: {
+    fontSize: 18,
+    color: Colors.success,
+    fontWeight: '700',
     marginLeft: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

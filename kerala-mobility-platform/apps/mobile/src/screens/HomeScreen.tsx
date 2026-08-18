@@ -1,403 +1,579 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
-import SectionHeading from '../components/SectionHeading';
+import {
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../theme/colors';
+import Avatar from '../components/Avatar';
+import StatCard from '../components/StatCard';
 import ConfidenceBadge from '../components/ConfidenceBadge';
-import { getWeather, WeatherData } from '../api/weather';
-import { getUnverifiedTrips, Trip } from '../api/trips';
-import { getUserId, getUserData } from '../api/client';
-import FeedbackCard from '../components/FeedbackCard';
+import SkeletonCard from '../components/SkeletonCard';
+import PrimaryButton from '../components/PrimaryButton';
+import FloatingTabBar, { TabName } from '../components/FloatingTabBar';
 
-/* ── Types ── */
-interface Place {
-  id: string;
-  name: string;
-  icon: string;
-  traffic: string;
-}
-
-/* ── Quick Actions ── */
-const QUICK_ACTIONS = [
-  { icon: 'clock' as const, label: 'History', bg: '#F3F4F6', color: '#1F2937', route: 'Trips' },
-  { icon: 'bar-chart-2' as const, label: 'Insights', bg: '#F3F4F6', color: '#1F2937', route: 'Explore' },
-  { icon: 'credit-card' as const, label: 'Fares', bg: '#F3F4F6', color: '#1F2937', route: 'Explore' },
-  { icon: 'alert-triangle' as const, label: 'Report', bg: '#F3F4F6', color: '#1F2937', route: 'Trips' },
-  { icon: 'shield' as const, label: 'Privacy', bg: '#F3F4F6', color: '#1F2937', route: 'Privacy' },
+// ─── Mock recent trips ────────────────────────────────────────────────────────
+const RECENT_TRIPS = [
+  {
+    id: '1',
+    route: 'Kochi to Munnar',
+    detail: '4h 15m  ·  AC Semi-Sleeper',
+    icon: 'bus-outline' as const,
+    confidence: 98,
+    iconColor: Colors.primary,
+  },
+  {
+    id: '2',
+    route: 'Vyttila to Kakkanad',
+    detail: '25m  ·  Water Metro',
+    icon: 'boat-outline' as const,
+    confidence: 82,
+    iconColor: '#3B82F6',
+  },
 ];
 
-/* ── Weather helpers ── */
-const weatherIconMap: Record<string, keyof typeof Feather.glyphMap> = {
-  Rain: 'cloud-rain',
-  Clouds: 'cloud',
-  Clear: 'sun',
-  Snow: 'cloud-snow',
-  Thunderstorm: 'zap',
-  Drizzle: 'cloud-drizzle',
-};
-const getWeatherIcon = (status: string): keyof typeof Feather.glyphMap =>
-  weatherIconMap[status] ?? 'cloud';
-
-const getModeIcon = (mode: string): keyof typeof Feather.glyphMap => {
-  switch (mode) {
-    case 'bus': case 'Bus': return 'truck';
-    case 'walk': case 'Walk': return 'user';
-    case 'auto': return 'navigation';
-    default: return 'truck';
-  }
-};
-
-/* ── Skeleton block ── */
-function Skeleton({ className }: { className?: string }) {
-  return <View className={`bg-gray-100 rounded-lg animate-pulse ${className}`} />;
-}
-
-export default function HomeScreen() {
-  const navigation = useNavigation();
-
-  // Weather state
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
-  const [weatherError, setWeatherError] = useState(false);
-
-  // Trips state
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [tripsLoading, setTripsLoading] = useState(true);
-
-  // Interactive UI state
-  const [showWeather, setShowWeather] = useState(true);
-  
-  // Quick Access Chips State
-  const [places, setPlaces] = useState<Place[]>([
-    { id: 'home', name: 'Home', icon: 'home', traffic: 'green' },
-    { id: 'work', name: 'Technopark', icon: 'briefcase', traffic: 'gold' },
-  ]);
-  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [isAddPlaceOpen, setIsAddPlaceOpen] = useState(false);
-  const [newPlaceName, setNewPlaceName] = useState('');
+export default function HomeScreen({ navigation }: { navigation: any }) {
+  const [loading, setLoading] = useState(true);
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [plannerVisible, setPlannerVisible] = useState(false);
+  const [origin, setOrigin] = useState('Vyttila Mobility Hub');
+  const [destination, setDestination] = useState('Fort Kochi');
+  const [selectedMode, setSelectedMode] = useState('All');
 
   useEffect(() => {
-    // Fetch weather (silent fail)
-    getWeather()
-      .then(setWeather)
-      .catch(() => setWeatherError(true))
-      .finally(() => setWeatherLoading(false));
-
-    // Fetch unverified trips for this user
-    const userId = getUserId() ?? 'guest';
-    getUnverifiedTrips(userId)
-      .then(setTrips)
-      .catch(() => setTrips([]))
-      .finally(() => setTripsLoading(false));
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
   }, []);
 
-  // Derive stats from real trips
-  const totalTrips = trips.length;
-  const totalKm = trips
-    .reduce((sum, t) => {
-      // Rough Haversine distance in km between origin and dest lat/lon
-      const R = 6371;
-      const dLat = ((t.dest_lat - t.origin_lat) * Math.PI) / 180;
-      const dLon = ((t.dest_lon - t.origin_lon) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos((t.origin_lat * Math.PI) / 180) *
-          Math.cos((t.dest_lat * Math.PI) / 180) *
-          Math.sin(dLon / 2) ** 2;
-      return sum + R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    }, 0)
-    .toFixed(1);
+  function handleTabPress(tab: TabName) {
+    if (tab === 'Home') return;
+    if (tab === 'CenterAction') {
+      setPlannerVisible(true);
+      return;
+    }
+    navigation.navigate(tab);
+  }
+
+  function handleStatPress(statName: string, detail: string) {
+    Alert.alert(statName, detail, [{ text: 'OK' }]);
+  }
+
+  function handleTripPlanSubmit() {
+    setPlannerVisible(false);
+    navigation.navigate('Discovery');
+  }
 
   return (
-    <View className="flex-1 bg-kerala-surface">
-      <Header />
-
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 24 }}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Pill Tabs ── */}
-        <View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4, gap: 8 }}
+        {/* ─── Header ─────────────────────────────────────── */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            hitSlop={8}
+            onPress={() => setMenuModalVisible(true)}
+            activeOpacity={0.7}
           >
-            {places.map((place) => (
-              <TouchableOpacity
-                key={place.id}
-                onPress={() => setSelectedPlace(place)}
-                className="flex-row items-center bg-white border border-kerala-border rounded-full px-3 py-1.5"
-                activeOpacity={0.7}
-              >
-                <Feather name={place.icon as any} size={12} color="#0B6E4F" style={{ marginRight: 6 }} />
-                <Text className="font-inter-medium text-[13px] text-gray-800">{place.name}</Text>
-                {place.traffic && (
-                  <View 
-                    className="w-2 h-2 rounded-full ml-1.5" 
-                    style={{ 
-                      backgroundColor: place.traffic === 'green' ? '#10B981' : place.traffic === 'gold' ? '#F59E0B' : '#EF4444' 
-                    }} 
-                  />
-                )}
-              </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              onPress={() => setIsAddPlaceOpen(true)}
-              className="flex-row items-center bg-white border border-kerala-border rounded-full px-3 py-1.5"
-              activeOpacity={0.7}
-            >
-              <Feather name="plus" size={12} color="#6B7280" style={{ marginRight: 4 }} />
-              <Text className="font-inter-medium text-[13px] text-gray-500">Add Place</Text>
-            </TouchableOpacity>
-          </ScrollView>
+            <Ionicons name="menu-outline" size={22} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Exploro</Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Avatar initials="AK" size={36} />
+          </TouchableOpacity>
         </View>
 
-        {/* ── Greeting ── */}
-        <View className="px-5 pt-4">
-          <Text className="font-inter text-sm text-gray-500">Good morning{getUserData()?.full_name ? `, ${getUserData()?.full_name.split(' ')[0]}` : ''}</Text>
-          <Text className="font-inter-bold text-[26px] text-gray-900 mt-0.5">Today</Text>
-          <Text className="font-inter text-[14px] text-gray-500 mt-0.5">
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
-          </Text>
+        {/* ─── Greeting ───────────────────────────────────── */}
+        <View style={styles.greetingBlock}>
+          <Text style={styles.greetingSmall}>GOOD MORNING</Text>
+          <Text style={styles.greetingLarge}>Hello, Arun!</Text>
         </View>
 
-        {/* ── Weather Advisory Banner ── */}
-        {showWeather && (
-          <View className="mx-5 mt-4">
-            {weatherLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : weatherError ? (
-              <View className="flex-row items-center bg-gray-50 border border-gray-100 rounded-card px-3 py-2.5">
-                <Feather name="cloud-off" size={14} color="#9CA3AF" />
-                <Text className="font-inter text-xs text-gray-400 ml-2">Weather data unavailable</Text>
-              </View>
-            ) : weather ? (
-              <View className="flex-row items-center bg-kerala-gold/15 rounded-card px-3 py-2.5">
-                <Feather name={getWeatherIcon(weather.weather_status)} size={14} color="#C89B3C" />
-                <Text className="font-inter-medium text-xs text-gray-800 flex-1 ml-2">
-                  {weather.weather_status} · {weather.temperature}°C · Wind {weather.wind_speed} km/h
-                </Text>
-                <TouchableOpacity onPress={() => setShowWeather(false)} className="px-2 py-1">
-                  <Feather name="x" size={14} color="#6B7280" />
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </View>
-        )}
+        {/* ─── Search bar ─────────────────────────────────── */}
+        <TouchableOpacity
+          style={styles.searchBar}
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('Discovery')}
+        >
+          <Ionicons name="search-outline" size={16} color={Colors.textLight} />
+          <Text style={styles.searchPlaceholder}>Where to next in Kerala?</Text>
+        </TouchableOpacity>
 
-        {/* ── Stat Blocks ── */}
-        <View className="flex-row px-5 mt-4 gap-2">
-          {tripsLoading ? (
-            [1, 2, 3].map((i) => <Skeleton key={i} className="flex-1 h-16" />)
+        {/* ─── Stat cards (interactive) ───────────────────── */}
+        <View style={styles.statsStack}>
+          {loading ? (
+            <>
+              <SkeletonCard height={96} borderRadius={14} style={styles.skeletonGap} />
+              <SkeletonCard height={96} borderRadius={14} style={styles.skeletonGap} />
+              <SkeletonCard height={96} borderRadius={14} />
+            </>
           ) : (
-            [
-              { icon: 'truck' as const, value: String(totalTrips), label: 'Trips' },
-              { icon: 'navigation' as const, value: `${totalKm} km`, label: 'Distance' },
-              { icon: 'clock' as const, value: `${(totalTrips * 15)} min`, label: 'Duration' },
-            ].map((stat) => (
-              <View key={stat.label} className="flex-1 bg-green-50 border border-green-100 rounded-card py-3 items-center">
-                <View className="flex-row items-center mb-1">
-                  <Feather name={stat.icon} size={13} color="#0B6E4F" />
-                  <Text className="font-inter-bold text-base text-gray-900 ml-1.5">{stat.value}</Text>
+            <>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() =>
+                  handleStatPress(
+                    'Total Trips: 124',
+                    '84 KSRTC Bus journeys, 28 Kochi Metro trips, and 12 Water Metro ferries verified this month.'
+                  )
+                }
+              >
+                <StatCard
+                  icon={<Ionicons name="navigate-outline" size={18} color={Colors.primary} />}
+                  value={124}
+                  label="Total Trips"
+                  style={styles.statGap}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() =>
+                  handleStatPress(
+                    'Distance Covered: 1,842 km',
+                    'Across 6 districts in Kerala. Most frequent route: Ernakulam to Kakkanad.'
+                  )
+                }
+              >
+                <StatCard
+                  icon={<Ionicons name="analytics-outline" size={18} color={Colors.primary} />}
+                  value={1842}
+                  unit="km"
+                  label="Distance Covered"
+                  style={styles.statGap}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() =>
+                  handleStatPress(
+                    'Time Saved: 48 hrs',
+                    'Calculated based on dedicated transit corridors and express bus routes compared to private traffic.'
+                  )
+                }
+              >
+                <StatCard
+                  icon={<Ionicons name="time-outline" size={18} color={Colors.primary} />}
+                  value={48}
+                  unit="hrs"
+                  label="Time Saved"
+                />
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* ─── Recent Activity ────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <TouchableOpacity
+            hitSlop={8}
+            onPress={() => navigation.navigate('Trips')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAll}>View All →</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.activityCard}>
+          {loading ? (
+            <>
+              <SkeletonCard height={64} borderRadius={10} style={styles.skeletonGap} />
+              <SkeletonCard height={64} borderRadius={10} />
+            </>
+          ) : (
+            RECENT_TRIPS.map((trip, idx) => (
+              <TouchableOpacity
+                key={trip.id}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Trips')}
+              >
+                {idx > 0 && <View style={styles.tripDivider} />}
+                <View style={styles.tripRow}>
+                  <View style={[styles.tripIconWrap, { backgroundColor: `${trip.iconColor}18` }]}>
+                    <Ionicons name={trip.icon} size={18} color={trip.iconColor} />
+                  </View>
+                  <View style={styles.tripInfo}>
+                    <Text style={styles.tripRoute}>{trip.route}</Text>
+                    <Text style={styles.tripDetail}>{trip.detail}</Text>
+                  </View>
+                  <ConfidenceBadge value={trip.confidence} />
                 </View>
-                <Text className="font-inter text-[11px] text-gray-500">{stat.label}</Text>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
 
-        {/* ── Quick Actions ── */}
-        <View className="flex-row px-5 mt-5 justify-between">
-          {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity 
-              key={action.label} 
-              onPress={() => (navigation as any).navigate(action.route)} 
-              className="items-center" 
-              activeOpacity={0.7}
-            >
-              <View className="w-12 h-12 rounded-full items-center justify-center mb-1.5" style={{ backgroundColor: action.bg }}>
-                <Feather name={action.icon} size={18} color={action.color} />
-              </View>
-              <Text className="font-inter-medium text-[12px] text-gray-600">{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ── Pending Verification Banner ── */}
-        {!tripsLoading && trips.length > 0 && (
-          <TouchableOpacity className="mx-5 mt-5" onPress={() => (navigation as any).navigate('Trips')}>
-            <View className="flex-row items-center bg-kerala-gold/10 border border-kerala-gold/30 rounded-card px-4 py-3">
-              <Feather name="alert-triangle" size={18} color="#C89B3C" />
-              <Text className="font-inter-semibold text-sm text-gray-800 flex-1 ml-3">
-                {trips.length} Trip{trips.length > 1 ? 's' : ''} Pending Verification
-              </Text>
-              <Feather name="arrow-right" size={16} color="#6B7280" />
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* ── Detected Activity (from real unverified trips) ── */}
-        <View className="px-5 mt-6">
-          <Text className="font-inter-bold text-lg text-gray-900 mb-4">Detected Activity</Text>
-
-          {tripsLoading ? (
-            <View className="gap-3">
-              {[1, 2].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
-            </View>
-          ) : trips.length === 0 ? (
-            <FeedbackCard
-              iconName="map"
-              message="No trips detected yet"
-              subMessage="Start your journey — we'll automatically detect your transit trips."
-              primaryAction={{
-                label: 'Log a Trip Now',
-                onPress: () => (navigation as any).navigate('Trips')
-              }}
-            />
-          ) : (
-            <View className="gap-0">
-              {trips.map((trip) => (
-                <TouchableOpacity
-                  key={trip.id}
-                  onPress={() => (navigation as any).navigate('Trips')}
-                  className="flex-row border-b border-kerala-border py-3.5"
-                >
-                  <View className="w-1 rounded-full bg-kerala-green mr-3 self-stretch" />
-                  <View className="w-9 h-9 rounded-card bg-kerala-surface items-center justify-center mr-3 mt-0.5">
-                    <Feather name={getModeIcon(trip.predicted_mode)} size={15} color="#374151" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-inter-semibold text-sm text-gray-900">
-                      {trip.origin_lat.toFixed(3)}, {trip.origin_lon.toFixed(3)} → {trip.dest_lat.toFixed(3)}, {trip.dest_lon.toFixed(3)}
-                    </Text>
-                    <Text className="font-inter text-xs text-gray-400 mt-1">
-                      {new Date(trip.start_time).toLocaleTimeString()} — {new Date(trip.end_time).toLocaleTimeString()}
-                    </Text>
-                  </View>
-                  <View className="justify-center ml-2">
-                    <ConfidenceBadge level={trip.confidence_score && trip.confidence_score > 0.7 ? 'high' : trip.confidence_score && trip.confidence_score > 0.4 ? 'medium' : 'low'} />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* ── Weekly Summary ── */}
-        <View className="mx-5 mt-5 flex-row items-center justify-between">
-          <Text className="font-inter text-xs text-gray-500">
-            {tripsLoading ? 'Loading...' : `This Session: ${totalTrips} Trips | ${totalKm} km`}
-          </Text>
-          <TouchableOpacity onPress={() => (navigation as any).navigate('Trips')} activeOpacity={0.7}>
-            <Text className="font-inter-semibold text-xs text-kerala-green">View Details</Text>
-          </TouchableOpacity>
-        </View>
+        <View style={styles.bottomPad} />
       </ScrollView>
 
-      {/* Action Sheet Modal */}
-      <Modal visible={!!selectedPlace} transparent animationType="fade">
-        <View className="flex-1 bg-black/50 justify-end">
-          <TouchableOpacity className="flex-1" onPress={() => setSelectedPlace(null)} activeOpacity={1} />
-          <View className="bg-white rounded-t-3xl p-5 pb-8">
-            <View className="flex-row justify-between items-center mb-6">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 rounded-full bg-kerala-green/10 items-center justify-center mr-3">
-                  <Feather name={selectedPlace?.icon as any} size={18} color="#0B6E4F" />
-                </View>
-                <Text className="font-inter-bold text-xl text-gray-900">{selectedPlace?.name}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setSelectedPlace(null)} className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center">
-                <Feather name="x" size={18} color="#000" />
+      {/* ─── Quick Menu Modal ─────────────────────────────── */}
+      <Modal
+        visible={menuModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setMenuModalVisible(false)}
+        >
+          <View style={styles.menuSheet}>
+            <View style={styles.menuSheetHeader}>
+              <Text style={styles.menuSheetTitle}>Quick Actions</Text>
+              <TouchableOpacity
+                onPress={() => setMenuModalVisible(false)}
+                hitSlop={10}
+              >
+                <Ionicons name="close" size={24} color={Colors.text} />
               </TouchableOpacity>
             </View>
-            
-            <View className="gap-2">
-              <TouchableOpacity 
-                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                activeOpacity={0.7}
-                onPress={() => setSelectedPlace(null)}
-              >
-                <Feather name="navigation" size={18} color="#2563EB" />
-                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Get Directions</Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity 
-                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                activeOpacity={0.7}
-                onPress={() => {
-                  setSelectedPlace(null);
-                  (navigation as any).navigate('Trips');
-                }}
-              >
-                <Feather name="play-circle" size={18} color="#0B6E4F" />
-                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Log a Trip Now</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuSheetItem}
+              onPress={() => {
+                setMenuModalVisible(false);
+                setPlannerVisible(true);
+              }}
+            >
+              <Ionicons name="map-outline" size={20} color={Colors.primary} />
+              <Text style={styles.menuSheetText}>Plan a New Journey</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity 
-                className="flex-row items-center p-4 bg-white rounded-xl border border-gray-200"
-                activeOpacity={0.7}
-                onPress={() => setSelectedPlace(null)}
-              >
-                <Feather name="edit-2" size={18} color="#6B7280" />
-                <Text className="font-inter-medium text-base text-gray-800 ml-3 flex-1">Edit Location</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.menuSheetItem}
+              onPress={() => {
+                setMenuModalVisible(false);
+                navigation.navigate('Trips');
+              }}
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color={Colors.primary} />
+              <Text style={styles.menuSheetText}>Verify Today's Trips</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuSheetItem}
+              onPress={() => {
+                setMenuModalVisible(false);
+                navigation.navigate('Discovery');
+              }}
+            >
+              <Ionicons name="compass-outline" size={20} color={Colors.primary} />
+              <Text style={styles.menuSheetText}>Explore Services</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuSheetItem}
+              onPress={() => {
+                setMenuModalVisible(false);
+                navigation.navigate('Profile');
+              }}
+            >
+              <Ionicons name="person-outline" size={20} color={Colors.primary} />
+              <Text style={styles.menuSheetText}>My Account & Settings</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        </Pressable>
       </Modal>
 
-      {/* Add Place Modal */}
-      <Modal visible={isAddPlaceOpen} transparent animationType="fade">
-        <View className="flex-1 bg-black/50 justify-end">
-          <TouchableOpacity className="flex-1" onPress={() => setIsAddPlaceOpen(false)} activeOpacity={1} />
-          <View className="bg-white rounded-t-3xl p-5 pb-8">
-            <View className="flex-row justify-between items-center mb-6">
-              <Text className="font-inter-bold text-xl text-gray-900">Add New Place</Text>
-              <TouchableOpacity onPress={() => setIsAddPlaceOpen(false)} className="w-8 h-8 rounded-full bg-gray-100 items-center justify-center">
-                <Feather name="x" size={18} color="#000" />
+      {/* ─── Quick Trip Planner Modal (Center + FAB Action) ─── */}
+      <Modal
+        visible={plannerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPlannerVisible(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setPlannerVisible(false)}
+        >
+          <View style={styles.plannerSheet}>
+            <View style={styles.plannerHandle} />
+            <View style={styles.menuSheetHeader}>
+              <Text style={styles.menuSheetTitle}>Plan Your Trip</Text>
+              <TouchableOpacity
+                onPress={() => setPlannerVisible(false)}
+                hitSlop={10}
+              >
+                <Ionicons name="close" size={24} color={Colors.text} />
               </TouchableOpacity>
             </View>
-            
-            <Text className="font-inter-medium text-sm text-gray-700 mb-2">Location Name</Text>
-            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-5">
-              <Feather name="map-pin" size={16} color="#9CA3AF" />
+
+            <Text style={styles.inputLabel}>FROM</Text>
+            <View style={styles.plannerInputWrap}>
+              <Ionicons name="location-outline" size={18} color={Colors.primary} />
               <TextInput
-                value={newPlaceName}
-                onChangeText={setNewPlaceName}
-                placeholder="e.g., Gym, School, Cafe"
-                placeholderTextColor="#9CA3AF"
-                className="flex-1 ml-2 font-inter text-base text-gray-900 outline-none"
-                style={{ padding: 0, outlineStyle: 'none' } as any}
-                autoFocus
+                style={styles.plannerInput}
+                value={origin}
+                onChangeText={setOrigin}
+                placeholder="Origin stop or station"
               />
             </View>
 
-            <TouchableOpacity 
-              className="bg-kerala-green rounded-xl py-3.5 items-center justify-center opacity-90"
-              activeOpacity={0.8}
-              onPress={() => {
-                if (newPlaceName.trim()) {
-                  setPlaces([...places, { 
-                    id: Date.now().toString(), 
-                    name: newPlaceName.trim(), 
-                    icon: 'map-pin', 
-                    traffic: '' 
-                  }]);
-                  setNewPlaceName('');
-                  setIsAddPlaceOpen(false);
-                }
-              }}
-            >
-              <Text className="font-inter-semibold text-base text-white">Save Location</Text>
-            </TouchableOpacity>
+            <Text style={styles.inputLabel}>TO</Text>
+            <View style={styles.plannerInputWrap}>
+              <Ionicons name="flag-outline" size={18} color={Colors.accent} />
+              <TextInput
+                style={styles.plannerInput}
+                value={destination}
+                onChangeText={setDestination}
+                placeholder="Destination"
+              />
+            </View>
+
+            {/* Mode selection chips */}
+            <Text style={styles.inputLabel}>PREFERRED MODE</Text>
+            <View style={styles.modeRow}>
+              {['All', 'Bus', 'Metro', 'Ferry'].map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  style={[
+                    styles.modeChip,
+                    selectedMode === m && styles.modeChipActive,
+                  ]}
+                  onPress={() => setSelectedMode(m)}
+                >
+                  <Text
+                    style={[
+                      styles.modeChipText,
+                      selectedMode === m && styles.modeChipTextActive,
+                    ]}
+                  >
+                    {m}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <PrimaryButton
+              title="Find Best Route →"
+              onPress={handleTripPlanSubmit}
+              style={{ marginTop: 16 }}
+            />
           </View>
-        </View>
+        </Pressable>
       </Modal>
 
-    </View>
+      {/* ─── Floating Tab bar ────────────────────────────── */}
+      <FloatingTabBar activeTab="Home" onTabPress={handleTabPress} />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: Colors.white },
+  scroll:   { flex: 1, backgroundColor: Colors.white },
+  content:  { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 28,
+  },
+  headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.primary },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.iconBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+
+  // Greeting
+  greetingBlock: { marginBottom: 20 },
+  greetingSmall: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.accent,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  greetingLarge: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: Colors.text,
+    lineHeight: 36,
+  },
+
+  // Search
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.iconBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchPlaceholder: { fontSize: 14, color: Colors.textLight },
+
+  // Stats
+  statsStack: { marginBottom: 28, gap: 10 },
+  statGap:    { marginBottom: 0 },
+  skeletonGap:{ marginBottom: 10 },
+
+  // Section header
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.text },
+  viewAll:      { fontSize: 12, color: Colors.primary, fontWeight: '600' },
+
+  // Activity card
+  activityCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  tripDivider: { height: 1, backgroundColor: Colors.border, marginVertical: 12 },
+  tripRow:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tripIconWrap:{
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripInfo:    { flex: 1 },
+  tripRoute:   { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 2 },
+  tripDetail:  { fontSize: 12, color: Colors.textMuted },
+
+  bottomPad:   { height: 20 },
+
+  // Modals
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  menuSheet: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  plannerSheet: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  plannerHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  menuSheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  menuSheetTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  menuSheetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  menuSheetText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    letterSpacing: 0.6,
+    marginBottom: 6,
+    marginTop: 8,
+  },
+  plannerInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.iconBg,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 8,
+    gap: 8,
+  },
+  plannerInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 6,
+  },
+  modeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.iconBg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  modeChipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  modeChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  modeChipTextActive: {
+    color: Colors.white,
+    fontWeight: '700',
+  },
+});

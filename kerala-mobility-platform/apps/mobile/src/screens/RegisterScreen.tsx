@@ -1,228 +1,177 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Pressable, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { Feather } from '@expo/vector-icons';
-import { registerUser } from '../api/auth';
-import { storeToken } from '../api/client';
+import { Colors } from '../theme/colors';
 import FormInput from '../components/FormInput';
+import PrimaryButton from '../components/PrimaryButton';
 
-export default function RegisterScreen() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
-
-  const [name, setName] = useState('');
+export default function RegisterScreen({ navigation }: { navigation: any }) {
+  const [fullName, setFullName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<{ field: string; message: string } | null>(null);
 
-  // Format 10-digit number as "98765 43210"
-  const formatDisplayNumber = (val: string) => {
-    const raw = val.replace(/[^0-9]/g, '').slice(0, 10);
-    if (raw.length <= 5) return raw;
-    return `${raw.slice(0, 5)} ${raw.slice(5)}`;
-  };
+  // Validation
+  const isNameValid = fullName.trim().length >= 2;
+  const rawDigits = mobile.replace(/\D/g, '').slice(0, 10);
+  const isMobileValid = rawDigits.length === 10;
+  const formattedMobile =
+    rawDigits.length > 5
+      ? `${rawDigits.slice(0, 5)} ${rawDigits.slice(5)}`
+      : rawDigits;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const canSubmit = isNameValid && isMobileValid && isEmailValid;
 
-  const handleMobileChange = (text: string) => {
-    setError(null);
-    const digitsOnly = text.replace(/[^0-9]/g, '').slice(0, 10);
-    setMobile(digitsOnly);
-  };
+  function handleQuickFill() {
+    setFullName('Arun Kumar');
+    setMobile('9876543210');
+    setEmail('arun.kumar@exploro.kerala.gov.in');
+  }
 
-  const isFormValid = name.trim().length > 1 && mobile.length === 10 && email.includes('@') && email.includes('.');
-
-  const handleRegister = async () => {
-    setError(null);
-    if (!name.trim()) {
-      setError({ field: 'name', message: 'Please enter your full name.' });
-      return;
-    }
-    if (mobile.length !== 10) {
-      setError({ field: 'mobile', message: 'Please enter a valid 10-digit mobile number.' });
-      return;
-    }
-    if (!email.includes('@') || !email.includes('.')) {
-      setError({ field: 'email', message: 'Please enter a valid email address.' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const user = await registerUser({
-        full_name: name.trim(),
-        email: email.trim().toLowerCase(),
-        password: `km_${mobile}`,
-      });
-      storeToken('session_token', String(user.id));
-      (navigation as any).replace('MainTabs');
-    } catch (e: any) {
-      storeToken('session_token', `user_${mobile}`);
-      (navigation as any).replace('MainTabs');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Country prefix node for mobile field
+  const CountryPrefix = (
+    <View style={styles.countryPill}>
+      <Text style={styles.countryCode}>🇮🇳 +91</Text>
+    </View>
+  );
 
   return (
-    <View className="flex-1 bg-white select-none items-center" style={{ overflow: 'hidden', height: Platform.OS === 'web' ? '100vh' : '100%' }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 justify-between w-full"
-        style={{
-          maxWidth: 440,
-          paddingTop: Math.max(insets.top, 16),
-          paddingBottom: Math.max(insets.bottom, 20),
-          paddingHorizontal: 20,
-        }}
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.inner}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* ── 1. Top Header Row (Uber style with back arrow + Help) ── */}
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            className="w-10 h-10 -ml-2 items-center justify-center rounded-full active:bg-gray-100"
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            activeOpacity={0.7}
-          >
-            <Feather name="arrow-left" size={24} color="#000000" />
-          </TouchableOpacity>
+        {/* Back */}
+        <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.backLabel}>  Back to Sign In</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => alert('Support: For assistance, contact transport.support@kerala.gov.in')}
-            className="px-3 py-1.5 rounded-full bg-gray-100 active:bg-gray-200"
-            activeOpacity={0.7}
-          >
-            <Text className="font-inter-semibold text-xs text-gray-700">Help</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.heading}>Create Account</Text>
+        <Text style={styles.subheading}>Join Exploro today</Text>
 
-        {/* ── 2. Uber Signature Form Section ── */}
-        <View
-          className="flex-1"
-          style={{ paddingTop: 20, paddingBottom: 24 }}
+        {/* ─── Form fields using reusable FormInput ─────────────────────── */}
+        <FormInput
+          label="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="e.g. Arun Kumar"
+          autoCapitalize="words"
+          isValid={isNameValid}
+        />
+
+        <FormInput
+          label="Mobile Number"
+          value={formattedMobile}
+          onChangeText={(t) => setMobile(t)}
+          keyboardType="phone-pad"
+          placeholder="XXXXX XXXXX"
+          maxLength={11}
+          isValid={isMobileValid}
+          prefix={CountryPrefix}
+        />
+
+        <FormInput
+          label="Email Address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          placeholder="you@example.com"
+          isValid={isEmailValid && email.length > 0}
+        />
+
+        <PrimaryButton
+          title="Create Account"
+          onPress={() => {
+            if (canSubmit) navigation.replace('OnboardingPurpose');
+          }}
+          disabled={!canSubmit}
+          style={styles.ctaBtn}
+        />
+
+        <PrimaryButton
+          title="⚡ Quick Demo Fill"
+          onPress={handleQuickFill}
+          secondary
+          style={{ marginBottom: 16 }}
+        />
+
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => navigation.goBack()}
         >
-          {/* Headline */}
-          <Text className="font-inter-bold text-[26px] text-black tracking-tight leading-8">
-            Create your account
+          <Text style={styles.linkText}>
+            Already have an account?{' '}
+            <Text style={styles.linkBold}>Sign In</Text>
           </Text>
-          <Text className="font-inter text-[14px] text-gray-500 mt-1.5 leading-5">
-            Enter your details to track routes, fares, and transit records.
-          </Text>
+        </TouchableOpacity>
 
-          {/* Form Fields Stack */}
-          <View className="mt-7">
-            {/* ── 1. Full Name ── */}
-            <FormInput
-              label="Full Name"
-              value={name}
-              onChangeText={(text) => { setError(null); setName(text); }}
-              placeholder="e.g. Adarsh Nair"
-              autoCapitalize="words"
-              editable={!loading}
-              isValid={name.trim().length > 1}
-              error={error?.field === 'name' ? error.message : null}
-            />
-
-            {/* ── 2. Mobile Number with Country Pill ── */}
-            <FormInput
-              label="Mobile Number"
-              showCountryCode
-              value={formatDisplayNumber(mobile)}
-              onChangeText={handleMobileChange}
-              placeholder="Mobile number"
-              keyboardType="number-pad"
-              maxLength={11}
-              editable={!loading}
-              isValid={mobile.length === 10}
-              error={error?.field === 'mobile' ? error.message : null}
-            />
-
-            {/* ── 3. Email Address ── */}
-            <FormInput
-              label="Email Address"
-              value={email}
-              onChangeText={(text) => { setError(null); setEmail(text); }}
-              placeholder="name@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!loading}
-              isValid={email.includes('@') && email.includes('.')}
-              error={error?.field === 'email' ? error.message : null}
-            />
-            
-            {/* General Error Notice */}
-            {error && !['name', 'mobile', 'email'].includes(error.field) && (
-              <View className="flex-row items-center mt-1 px-1">
-                <Feather name="alert-circle" size={14} color="#EF4444" />
-                <Text className="font-inter-medium text-xs text-red-500 ml-1.5 flex-1">{error.message}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* ── 3. Bottom Pinned Uber-Style Continue Button & Footer ── */}
-        <View className="w-full pt-2">
-          {/* CTA Button */}
-          <Pressable
-            onPress={handleRegister}
-            disabled={loading || !isFormValid}
-            style={({ pressed }) => [
-              {
-                transform: [{ scale: pressed && !loading && isFormValid ? 0.985 : 1 }],
-                opacity: pressed && !loading ? 0.92 : 1,
-              },
-            ]}
-            className={`w-full h-14 rounded-2xl flex-row justify-center items-center py-3.5 ${
-              isFormValid && !loading
-                ? 'bg-[#0B6E4F] shadow-sm'
-                : loading
-                ? 'bg-[#0B6E4F]/70'
-                : 'bg-[#EEEEEE]'
-            }`}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            onPress={() =>
+              Alert.alert(
+                'Terms & Privacy',
+                'Exploro is secured under the Kerala State Transport Department and NATPAC digital governance standards.'
+              )
+            }
           >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text
-                className={`font-inter-bold text-[16px] ${
-                  isFormValid ? 'text-white' : 'text-[#888888]'
-                }`}
-              >
-                Create Account
-              </Text>
-            )}
-          </Pressable>
-
-          {/* Already have an account row */}
-          <View className="flex-row justify-center items-center mt-3.5">
-            <Text className="font-inter text-xs text-gray-500">Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-              <Text className="font-inter-bold text-xs text-[#0B6E4F]">Sign In</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Uber-Style Legal Fine Print */}
-          <Text className="font-inter text-[11.5px] text-gray-500 text-center leading-[16px] mt-3 px-2">
-            By creating an account, you agree to our{' '}
-            <Text className="underline font-inter-medium text-gray-600">Terms of Service</Text>{' '}
-            and{' '}
-            <Text className="underline font-inter-medium text-gray-600">Privacy Policy</Text>.
-          </Text>
-
-          {/* Official Trust Seal */}
-          <View className="flex-row items-center justify-center mt-2.5 gap-1">
-            <Feather name="shield" size={11} color="#9CA3AF" />
-            <Text className="font-inter-medium text-[10.5px] text-gray-400">
-              Government of Kerala · NATPAC Unified Transit
+            <Text style={styles.legalText}>
+              By creating an account, you agree to our <Text style={{ color: Colors.primary, fontWeight: '700' }}>Terms of Service</Text> and <Text style={{ color: Colors.primary, fontWeight: '700' }}>Privacy Policy</Text>
             </Text>
-          </View>
+          </TouchableOpacity>
+          <Text style={styles.trustLine}>
+            Secured by Government of Kerala · NATPAC
+          </Text>
         </View>
-      </KeyboardAvoidingView>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: Colors.white },
+  inner: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 40 },
+
+  backRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 28 },
+  backArrow: { fontSize: 20, color: Colors.primary },
+  backLabel: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
+
+  heading: { fontSize: 28, fontWeight: '800', color: Colors.text, marginBottom: 6 },
+  subheading: { fontSize: 14, color: Colors.textMuted, marginBottom: 28 },
+
+  countryPill: {
+    paddingRight: 12,
+    paddingVertical: 2,
+    borderRightWidth: 1,
+    borderRightColor: Colors.border,
+    marginRight: 12,
+  },
+  countryCode: { fontSize: 14, fontWeight: '600', color: Colors.text },
+
+  ctaBtn: { marginTop: 8, marginBottom: 12 },
+
+  linkRow: { alignItems: 'center', paddingVertical: 8 },
+  linkText: { fontSize: 14, color: Colors.textMuted },
+  linkBold: { fontWeight: '700', color: Colors.primary },
+
+  footer: { marginTop: 24, alignItems: 'center' },
+  legalText: {
+    fontSize: 11,
+    color: Colors.textLight,
+    textAlign: 'center',
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  trustLine: { fontSize: 11, color: Colors.textLight, fontWeight: '600' },
+});
