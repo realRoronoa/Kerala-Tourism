@@ -1,10 +1,12 @@
 import json
 import os
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 import httpx
 from app.core.config import settings
 from app.schemas.itinerary import ItineraryRequestSchema
+from app.schemas.user import SendItineraryEmailRequest
+from app.services.email_service import email_service
 
 router = APIRouter()
 
@@ -34,7 +36,6 @@ def load_spots_dataset() -> List[Dict[str, Any]]:
             return json.load(f)
 
     return []
-
 
 
 @router.post("/generate")
@@ -76,6 +77,35 @@ async def generate_tourist_itinerary(payload: ItineraryRequestSchema):
             }
 
 
+@router.post("/email-itinerary")
+def email_tourist_itinerary(payload: SendItineraryEmailRequest, background_tasks: BackgroundTasks):
+    """
+    Sends the generated travel itinerary to the traveler's email inbox.
+    """
+    if not payload.email or "@" not in payload.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid email address is required."
+        )
+
+    itinerary_data = {
+        "destination": payload.destination,
+        "days": payload.days or []
+    }
+
+    background_tasks.add_task(
+        email_service.send_itinerary_email, 
+        payload.email, 
+        itinerary_data, 
+        payload.traveler_name
+    )
+
+    return {
+        "status": "success",
+        "message": f"Itinerary dispatched to {payload.email}."
+    }
+
+
 @router.get("/spots")
 async def get_kerala_tourist_spots(
     preference: Optional[str] = Query(None, description="User interest preference (e.g. nature, beach, wildlife, mountains, peaceful, culture)")
@@ -95,4 +125,3 @@ async def get_kerala_tourist_spots(
         return filtered if filtered else spots
 
     return spots
-

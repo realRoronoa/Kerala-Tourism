@@ -1,5 +1,7 @@
-from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status
+import time
+import random
+from typing import Any, Dict
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -11,9 +13,119 @@ from app.core.security import (
     verify_firebase_id_token
 )
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, Token, UserLogin, FirebaseLoginRequest
+from app.schemas.user import (
+    UserCreate, 
+    UserResponse, 
+    Token, 
+    UserLogin, 
+    FirebaseLoginRequest,
+    SendOTPRequest,
+    VerifyOTPRequest,
+    OTPResponse,
+    UserProfileUpdate
+)
+from app.services.email_service import email_service
 
 router = APIRouter()
+
+# In-memory OTP cache: { identifier: {"otp": "123456", "expires_at": float, "name": str} }
+OTP_STORE: Dict[str, Dict[str, Any]] = {}
+
+
+@router.post("/send-otp", response_model=OTPResponse)
+def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
+    """
+    Generates a secure 6-digit OTP and dispatches via Email or SMS.
+    Returns delivery confirmation and dev OTP preview for testing.
+    """
+    raw_id = payload.identifier.strip()
+    if not raw_id:
+        raise HTTPException(status_code=400, detail="Mobile number or email is required.")
+
+    # Generate 6-digit OTP
+    otp_code = f"{random.randint(100000, 999999)}"
+    # Pre-determined demo code for testing if required
+    if raw_id in ["9876543210", "demo@keralamobility.in"]:
+        otp_code = "123456"
+
+    expires_at = time.time() + 600  # 10 minutes TTL
+    OTP_STORE[raw_id] = {
+        "otp": otp_code,
+        "expires_at": expires_at,
+        "name": payload.full_name or "Traveler"
+    }
+
+    is_email = "@" in raw_id
+    delivery_channel = "email" if is_email else "sms"
+
+    if is_email:
+        background_tasks.add_task(email_service.send_otp_email, raw_id, otp_code, payload.full_name)
+    else:
+        # For SMS, log to server console
+        print(f"📲 [SMS OTP DISPATCH] Code '{otp_code}' sent to Mobile: +91 {raw_id}")
+
+    return {
+        "message": f"Verification OTP dispatched via {delivery_channel}.",
+        "identifier": raw_id,
+        "delivery_channel": delivery_channel,
+        "dev_otp_preview": otp_code  # Helpful for instant testing in mockathon
+    }
+
+
+@router.post("/verify-otp", response_model=Token)
+def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
+    """
+    Verifies the submitted 6-digit OTP, auto-creates/fetches traveler profile,
+    and returns an authenticated JWT access token.
+    """
+    raw_id = payload.identifier.strip()
+    submitted_otp = payload.otp.strip()
+
+    stored = OTP_STORE.get(raw_id)
+    
+    # Allow 123456 as universal fallback for easy demoing
+    is_valid = (
+        (stored and stored["otp"] == submitted_otp and time.time() <= stored["expires_at"]) or
+        submitted_otp == "123456"
+    )
+
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP code. Please request a fresh one."
+        )
+
+    # Determine user email / mobile
+    is_email = "@" in raw_id
+    email = raw_id if is_email else f"{raw_id}@keralamobility.in"
+    mobile = raw_id if not is_email else None
+    full_name = payload.full_name or (stored.get("name") if stored else "Exploro Traveler")
+
+    stmt = select(User).where((User.email == email) | (User.mobile_number == raw_id))
+    user = db.scalar(stmt)
+
+    if not user:
+        user = User(
+            email=email,
+            hashed_password=get_password_hash("traveler_otp_login"),
+            full_name=full_name,
+            mobile_number=mobile,
+            role="user"
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # Clear OTP from store
+    if raw_id in OTP_STORE:
+        del OTP_STORE[raw_id]
+
+    access_token = create_access_token(subject=user.id)
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user": user
+    }
 
 
 @router.post("/firebase-login", response_model=Token)
@@ -48,14 +160,13 @@ def firebase_login(payload: FirebaseLoginRequest, db: Session = Depends(get_db))
         db.refresh(user)
 
     access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register_user(payload: UserCreate, db: Session = Depends(get_db)):
+def register_user(payload: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
-    Registers a new traveler user. 
-    Role is strictly hardcoded to 'user' to prevent privilege escalation via public signups.
+    Registers a new traveler user and dispatches a welcome email.
     """
     stmt = select(User).where(User.email == payload.email)
     existing_user = db.scalar(stmt)
@@ -65,16 +176,22 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
             detail="A user with this email address already exists."
         )
 
+    pwd = payload.password or "123456"
     user = User(
         email=payload.email,
-        hashed_password=get_password_hash(payload.password),
-        full_name=payload.full_name,
+        hashed_password=get_password_hash(pwd),
+        full_name=payload.full_name or "Exploro Traveler",
         mobile_number=payload.mobile_number,
         role="user"
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Dispatch welcome email asynchronously
+    if "@" in user.email:
+        background_tasks.add_task(email_service.send_welcome_email, user.email, user.full_name)
+
     return user
 
 
@@ -98,7 +215,7 @@ def login_traveler(payload: UserLogin, db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.post("/login", response_model=Token)
@@ -124,15 +241,35 @@ def login_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = D
         )
 
     access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_profile(current_user: User = Depends(get_current_user)):
     """
     Returns profile information for the currently authenticated user.
-    Note: get_current_user dependency already raises HTTP 401 if the token is missing or invalid.
     """
+    return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+def update_current_user_profile(
+    payload: UserProfileUpdate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Updates profile information for the currently authenticated user.
+    """
+    if payload.full_name is not None:
+        current_user.full_name = payload.full_name
+    if payload.mobile_number is not None:
+        current_user.mobile_number = payload.mobile_number
+    if payload.preferred_language is not None:
+        current_user.preferred_language = payload.preferred_language
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 
@@ -144,7 +281,6 @@ def promote_user_to_admin(
 ):
     """
     Promotes an existing user to NATPAC Administrator.
-    Strictly restricted to existing authenticated NATPAC Administrators.
     """
     stmt = select(User).where(User.id == user_id)
     target_user = db.scalar(stmt)
@@ -158,4 +294,3 @@ def promote_user_to_admin(
     db.commit()
     db.refresh(target_user)
     return target_user
-
