@@ -69,6 +69,11 @@ const QuickAccessDownloads: React.FC = () => {
                   <td className="px-3 py-2 text-center">
                     <a
                       href={item.url}
+                      onClick={(e) => {
+                        if (item.url === '#') {
+                          e.preventDefault();
+                        }
+                      }}
                       className="text-[13px] text-[#0b3d91] underline hover:text-[#14307a] font-medium whitespace-nowrap"
                     >
                       Download &darr;
