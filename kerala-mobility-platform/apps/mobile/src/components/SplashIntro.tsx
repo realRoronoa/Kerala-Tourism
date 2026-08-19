@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
   Easing,
   Platform,
@@ -9,7 +10,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  LinearGradient,
+  Mask,
+  Path,
+  Rect,
+  Stop,
+  Text as SvgText,
+} from 'react-native-svg';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 // ─── Named Tunable Constants & Spacing ─────────────────────────────────────────
 export const SPLASH_CONFIG = {
@@ -21,7 +34,9 @@ export const SPLASH_CONFIG = {
   // Colors
   BACKGROUND_COLOR: '#FFFFFF',
   TEXT_COLOR: '#0F1B2D',       // Deep Navy
+  PRIMARY_GREEN: '#0B5D3B',    // Primary Brand Green base for Wordmark
   ACCENT_COLOR: '#0E8F5C',     // Brand Green
+  SHIMMER_GOLD: '#C89B3C',     // Gold Shimmer Highlight
   CURSOR_BLOCK_COLOR: 'rgba(14, 143, 92, 0.25)',
 
   // Sizing
@@ -50,6 +65,117 @@ export const SPLASH_CONFIG = {
   EXIT_DELAY: 2800,            // 2800ms: Everything fades out together as one unit
   EXIT_DURATION: 300,          // 300ms fade duration
 };
+
+// ─── Masked Shimmer / Gloss Sweep Wordmark ─────────────────────────────────────
+function ShimmerWordmark({
+  text = SPLASH_CONFIG.APP_NAME,
+  fontSize = SPLASH_CONFIG.APP_NAME_SIZE,
+  width = 130,
+  height = 32,
+}: {
+  text?: string;
+  fontSize?: number;
+  width?: number;
+  height?: number;
+}) {
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  // Check prefers-reduced-motion accessibility setting
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => setReduceMotion(enabled))
+      .catch(() => {});
+
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      (enabled) => setReduceMotion(enabled)
+    );
+    return () => {
+      sub?.remove?.();
+    };
+  }, []);
+
+  // Continuous left-to-right sweep animation loop (~2.5s)
+  useEffect(() => {
+    if (reduceMotion) return;
+
+    const anim = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 2500,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      })
+    );
+    anim.start();
+
+    return () => {
+      anim.stop();
+    };
+  }, [reduceMotion]);
+
+  const shimmerX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-width, width],
+  });
+
+  return (
+    <View style={styles.wordmarkWrap}>
+      <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Defs>
+          {/* Alpha mask matching text glyph shape */}
+          <Mask id="wordmarkMask">
+            <SvgText
+              x={width / 2}
+              y={fontSize * 0.96}
+              textAnchor="middle"
+              fontSize={fontSize}
+              fontWeight="800"
+              fill="#FFFFFF"
+            >
+              {text}
+            </SvgText>
+          </Mask>
+
+          {/* Shimmer gradient: Base #0B5D3B with moving gold #C89B3C gloss band */}
+          <LinearGradient id="shimmerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor={SPLASH_CONFIG.PRIMARY_GREEN} stopOpacity="0" />
+            <Stop offset="30%" stopColor={SPLASH_CONFIG.PRIMARY_GREEN} stopOpacity="0" />
+            <Stop offset="50%" stopColor={SPLASH_CONFIG.SHIMMER_GOLD} stopOpacity="0.95" />
+            <Stop offset="70%" stopColor={SPLASH_CONFIG.PRIMARY_GREEN} stopOpacity="0" />
+            <Stop offset="100%" stopColor={SPLASH_CONFIG.PRIMARY_GREEN} stopOpacity="0" />
+          </LinearGradient>
+        </Defs>
+
+        {/* Base text fill in primary green #0B5D3B at rest */}
+        <SvgText
+          x={width / 2}
+          y={fontSize * 0.96}
+          textAnchor="middle"
+          fontSize={fontSize}
+          fontWeight="800"
+          fill={SPLASH_CONFIG.PRIMARY_GREEN}
+        >
+          {text}
+        </SvgText>
+
+        {/* Moving gold gloss sweep masked directly to text glyph shape */}
+        {!reduceMotion && (
+          <G mask="url(#wordmarkMask)">
+            <AnimatedRect
+              x={shimmerX}
+              y="0"
+              width={width}
+              height={height}
+              fill="url(#shimmerGradient)"
+            />
+          </G>
+        )}
+      </Svg>
+    </View>
+  );
+}
 
 export interface SplashIntroProps {
   onFinish?: () => void;
@@ -210,7 +336,7 @@ export default function SplashIntro({ onFinish, loop = false }: SplashIntroProps
             { opacity: containerOpacity },
           ]}
         >
-          {/* Logo Badge + "Exploro" + Squiggle */}
+          {/* Logo Badge + "Exploro" Shimmer Wordmark + Squiggle */}
           <View style={styles.logoContainer}>
             {/* Logo Badge (~64px) */}
             <View style={styles.logoBadge}>
@@ -241,8 +367,8 @@ export default function SplashIntro({ onFinish, loop = false }: SplashIntroProps
               </Svg>
             </View>
 
-            {/* App Name: "Exploro" (26px font, 30px lineHeight) */}
-            <Text style={styles.appName}>{SPLASH_CONFIG.APP_NAME}</Text>
+            {/* App Name Shimmer Wordmark: "Exploro" with masked gold gloss sweep */}
+            <ShimmerWordmark />
 
             {/* Hand-drawn SVG Squiggle Underline */}
             <Animated.View style={[styles.squiggleWrap, { width: squiggleWidth }]}>
@@ -301,11 +427,11 @@ export default function SplashIntro({ onFinish, loop = false }: SplashIntroProps
                         },
                       ]}
                     >
-                      <Svg width={26} height={26} viewBox="0 0 26 26">
+                      <Svg width={22} height={22} viewBox="0 0 22 22">
                         <Path
-                          d="M6 13.5 L11 18.5 L20 8.5"
+                          d="M 5 11 L 9 15 L 17 7"
                           stroke="#FFFFFF"
-                          strokeWidth="3.2"
+                          strokeWidth={3.5}
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           fill="none"
@@ -378,14 +504,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  appName: {
-    fontSize: SPLASH_CONFIG.APP_NAME_SIZE, // 26px
-    lineHeight: SPLASH_CONFIG.APP_NAME_LINE_HEIGHT, // 30px explicit
-    fontWeight: '800',
-    color: SPLASH_CONFIG.TEXT_COLOR,
-    letterSpacing: -0.6,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'System' : undefined,
+  wordmarkWrap: {
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: SPLASH_CONFIG.SPACING.nameToUnderline, // 8px
   },
   squiggleWrap: {
