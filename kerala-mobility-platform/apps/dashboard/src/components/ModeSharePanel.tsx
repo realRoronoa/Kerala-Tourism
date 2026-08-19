@@ -1,94 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../apiConfig';
+import React from 'react';
 
-interface ModeShare {
-  mode: string;
-  percentage: number;
-  colorClass: string;
-}
-
-const colorMap: Record<string, string> = {
-  'Bus / KSRTC Transit': 'bg-red-600',
-  'Private Vehicles & Cars': 'bg-blue-600',
-  'Auto Rickshaws': 'bg-yellow-500',
-  'Walking / Active Micro-Mobility': 'bg-green-500',
-  'default': 'bg-gray-500'
-};
+// Professional monochromatic data visualization palette
+const MOCK_MODE_SHARE = [
+  { mode: 'Bus / KSRTC Transit', percentage: 42, colorClass: 'bg-[#0B1F44]' }, // Very Dark Navy
+  { mode: 'Private Vehicles & Cars', percentage: 28, colorClass: 'bg-[#254382]' }, // Mid Navy
+  { mode: 'Auto Rickshaws', percentage: 18, colorClass: 'bg-[#4B6FA6]' }, // Muted Steel Blue
+  { mode: 'Walking / Active Micro-Mobility', percentage: 12, colorClass: 'bg-[#7388A8]' }, // Slate Blue
+];
 
 const ModeSharePanel: React.FC = () => {
-  const [data, setData] = useState<ModeShare[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchModeSplit = async () => {
-      try {
-        const token = localStorage.getItem('natpac_admin_token');
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const response = await fetch(`${API_BASE_URL}/api/v1/analytics/mode-split`, { headers });
-        if (response.ok) {
-          const result = await response.json();
-          // Assuming result is an array of { mode: "...", percentage: 42 }
-          const formattedData = result.map((item: any) => ({
-            ...item,
-            colorClass: colorMap[item.mode] || colorMap['default']
-          }));
-          setData(formattedData);
-        }
-      } catch (error) {
-        console.error('Failed to fetch mode split data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchModeSplit();
-  }, []);
+  const data = MOCK_MODE_SHARE;
 
   return (
-    <div className="bg-white border border-gray-300 shadow-sm flex flex-col h-full">
-      <div className="border-b border-gray-300 bg-gray-50 p-6 flex items-center gap-3">
-        <span className="text-2xl">🚍</span>
-        <div>
-          <h3 className="text-base font-semibold text-gov-blue-primary uppercase tracking-wide">Modal Split Distribution</h3>
-          <p className="text-sm text-gray-600 mt-1">Distribution of primary transport modes</p>
-        </div>
+    <div className="font-sans h-full flex flex-col">
+      <div className="mb-3">
+        <h3 className="text-[16px] font-bold text-[#0a1a4a] m-0 border-l-[3px] border-[#FF9933] pl-2 leading-tight">
+          Modal Split Distribution
+        </h3>
+        <p className="text-[12px] text-[#5a5f6d] mt-1 pl-3 m-0">Distribution of primary transport modes</p>
       </div>
-      <div className="p-6 flex-1 flex flex-col justify-center gap-8">
-        
-        {loading ? (
-          <div className="w-full h-12 bg-gray-200 animate-pulse border border-gray-400"></div>
-        ) : (
-          <>
-            {/* Segmented Bar */}
-            <div className="w-full h-12 flex border border-gray-400 overflow-hidden">
-              {data.map((mode, index) => (
-                <div 
-                  key={index} 
-                  className={`${mode.colorClass} h-full border-r border-white last:border-r-0 flex items-center justify-center text-xs font-semibold text-white shadow-inner`}
-                  style={{ width: `${mode.percentage}%` }}
-                  title={`${mode.mode}: ${mode.percentage}%`}
-                >
-                  {mode.percentage > 5 ? `${mode.percentage}%` : ''}
-                </div>
-              ))}
-            </div>
 
-            {/* Legend */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {data.map((mode, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className={`w-6 h-6 border border-gray-400 flex-shrink-0 ${mode.colorClass}`}></div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-800 leading-tight">{mode.mode}</span>
-                    <span className="text-xs text-gray-600 font-normal">{mode.percentage}%</span>
-                  </div>
-                </div>
-              ))}
+      <div className="bg-white border border-[#d7dce6] p-5 flex-1 flex flex-col justify-center gap-6">
+        {/* Segmented Bar */}
+        <div className="w-full h-6 flex border border-[#d7dce6] rounded-none overflow-hidden">
+          {data.map((mode, index) => (
+            <div 
+              key={index} 
+              className={`${mode.colorClass} h-full border-r border-white last:border-r-0 flex items-center justify-center text-[11px] font-bold text-white`}
+              style={{ width: `${mode.percentage}%` }}
+              title={`${mode.mode}: ${mode.percentage}%`}
+            >
+              {mode.percentage > 5 ? `${mode.percentage}%` : ''}
             </div>
-          </>
-        )}
+          ))}
+        </div>
 
+        {/* Legend */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
+          {data.map((mode, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-none flex-shrink-0 border border-[#d7dce6] ${mode.colorClass}`}></div>
+              <div className="flex flex-col">
+                <span className="text-[12px] font-medium text-[#1a1a1a] leading-tight">{mode.mode}</span>
+                <span className="text-[11px] text-[#5a5f6d]">{mode.percentage}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

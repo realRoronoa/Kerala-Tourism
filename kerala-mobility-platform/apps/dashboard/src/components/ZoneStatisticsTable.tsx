@@ -4,50 +4,70 @@ import { Download, Printer } from 'lucide-react';
 
 const ZoneStatisticsTable: React.FC = () => {
   return (
-    <div className="bg-white border border-gray-300 shadow-sm flex flex-col lg:col-span-2">
-      <div className="border-b border-gray-300 bg-gray-50 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="font-sans lg:col-span-2">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-3 gap-3">
         <div>
-          <h3 className="text-xl font-semibold text-gov-blue-primary uppercase">Zone-Wise Statistics — Top 10 High-Activity Zones</h3>
-          <p className="text-sm text-gray-600 mt-1">Detailed metrics for priority traffic analysis zones</p>
+          <h3 className="text-[16px] font-bold text-[#0a1a4a] m-0 border-l-[3px] border-[#FF9933] pl-2 leading-tight">
+            Zone-Wise Statistics — Top 10 High-Activity Zones
+          </h3>
+          <p className="text-[12px] text-[#5a5f6d] mt-1 pl-3 m-0">Detailed metrics for priority traffic analysis zones</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-400 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-            <Download className="w-4 h-4" /> CSV
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#d7dce6] text-[11px] font-semibold text-[#1a1a1a] hover:bg-[#f4f6fb] rounded-sm">
+            <Download className="w-3.5 h-3.5" /> CSV
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-400 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-            <Printer className="w-4 h-4" /> Print
+          <button className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#d7dce6] text-[11px] font-semibold text-[#1a1a1a] hover:bg-[#f4f6fb] rounded-sm">
+            <Printer className="w-3.5 h-3.5" /> Print
           </button>
         </div>
       </div>
-      <div className="p-6 overflow-x-auto">
-        <table className="w-full text-left border-collapse border border-gray-300 min-w-[800px]">
+
+      <div className="bg-white border border-[#d7dce6] overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
-            <tr className="bg-gov-blue-primary text-white">
-              <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm">Zone ID</th>
-              <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm">Zone Name</th>
-              <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm text-right">Total Trips</th>
-              <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm text-right">Avg Distance (KM)</th>
-              <th className="border border-gray-400 p-4 font-semibold uppercase tracking-wide text-sm text-right">Congestion %</th>
+            <tr className="bg-[#0a1a4a]">
+              <th scope="col" className="px-3 py-2 font-semibold text-[12px] text-white border-r border-[#ffffff]/20">Zone ID</th>
+              <th scope="col" className="px-3 py-2 font-semibold text-[12px] text-white border-r border-[#ffffff]/20">Zone Name</th>
+              <th scope="col" className="text-right px-3 py-2 font-semibold text-[12px] text-white border-r border-[#ffffff]/20">Total Trips</th>
+              <th scope="col" className="text-right px-3 py-2 font-semibold text-[12px] text-white border-r border-[#ffffff]/20">Avg Dist (KM)</th>
+              <th scope="col" className="text-center px-3 py-2 font-semibold text-[12px] text-white">Congestion Status</th>
             </tr>
           </thead>
-          <tbody>
-            {MOCK_ZONE_STATS.map((stat, index) => (
-              <tr key={stat.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="border border-gray-300 p-4 font-medium text-gray-700">{stat.id.toUpperCase()}</td>
-                <td className="border border-gray-300 p-4 font-medium text-gray-900">{stat.zoneName}</td>
-                <td className="border border-gray-300 p-4 text-right font-normal text-gray-700">{stat.totalTrips.toLocaleString()}</td>
-                <td className="border border-gray-300 p-4 text-right font-normal text-gray-700">{stat.avgDistanceKm.toFixed(1)}</td>
-                <td className="border border-gray-300 p-4 text-right">
-                  <span className={`px-2 py-1 font-semibold text-sm border ${
-                    stat.congestionPercentage > 90 ? 'bg-status-critical text-white border-red-800' :
-                    stat.congestionPercentage > 80 ? 'bg-status-veryHigh text-white border-orange-700' :
-                    'bg-status-high text-white border-orange-600'
-                  }`}>
-                    {stat.congestionPercentage}%
-                  </span>
-                </td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-[#d7dce6]">
+            {MOCK_ZONE_STATS.map((stat, index) => {
+              const isDanger = stat.congestionPercentage > 90;
+              const isWarning = stat.congestionPercentage > 80 && stat.congestionPercentage <= 90;
+              
+              const statusText = isDanger ? 'text-[#c0392b]' : isWarning ? 'text-[#b7791f]' : 'text-[#1e7e34]';
+              const statusLabel = isDanger ? 'High' : isWarning ? 'Elevated' : 'Normal';
+
+              return (
+                <tr 
+                  key={stat.id} 
+                  className={index % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]'}
+                >
+                  <td className="px-3 py-2 font-medium text-[#1a1a1a] text-[13px] border-r border-[#d7dce6]">
+                    {stat.id.toUpperCase()}
+                  </td>
+                  <td className="px-3 py-2 border-r border-[#d7dce6]">
+                    <a href="#" className="text-[#0b3d91] underline hover:text-[#14307a] text-[13px]">
+                      {stat.zoneName}
+                    </a>
+                  </td>
+                  <td className="px-3 py-2 text-right text-[#1a1a1a] text-[13px] font-medium tabular-nums border-r border-[#d7dce6]">
+                    {stat.totalTrips.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-right text-[#1a1a1a] text-[13px] font-medium tabular-nums border-r border-[#d7dce6]">
+                    {stat.avgDistanceKm.toFixed(1)}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`text-[12px] font-bold ${statusText}`}>
+                      {stat.congestionPercentage}% ({statusLabel})
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ShieldCheck, CheckCircle2, RefreshCw, User, Lock } from 'lucide-react';
-import { API_BASE_URL } from '../apiConfig';
 
 interface AdminAuthPageProps {
   onLoginSuccess: () => void;
@@ -34,7 +33,7 @@ const AdminAuthPage: React.FC<AdminAuthPageProps> = ({ onLoginSuccess }) => {
       formData.append('username', email);
       formData.append('password', password);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -43,10 +42,6 @@ const AdminAuthPage: React.FC<AdminAuthPageProps> = ({ onLoginSuccess }) => {
       });
 
       if (response.ok) {
-        const data = await response.json().catch(() => ({}));
-        if (data.access_token) {
-          localStorage.setItem('natpac_admin_token', data.access_token);
-        }
         setIsVerifying(false);
         onLoginSuccess();
       } else {

@@ -1,74 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Activity, CheckCircle, MapPin } from 'lucide-react';
-import { API_BASE_URL } from '../apiConfig';
-
-interface SummaryData {
-  total_trips: number | string;
-  verified_trips: number | string;
-  verification_rate: string | number;
-}
+import React from 'react';
+import { MOCK_STATS } from '../data/mockDashboardData';
 
 const HeroStatsBanner: React.FC = () => {
-  const [data, setData] = useState<SummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const token = localStorage.getItem('natpac_admin_token');
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const response = await fetch(`${API_BASE_URL}/api/v1/analytics/summary`, { headers });
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
-        }
-      } catch (error) {
-        console.error('Failed to fetch summary data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSummary();
-  }, []);
-
-  const stats = [
-    {
-      id: 'total',
-      label: 'Total Processed Citizen Journeys',
-      value: data ? data.total_trips : '...',
-      icon: <Activity className="w-8 h-8 text-gov-blue-primary" />
-    },
-    {
-      id: 'verified',
-      label: 'Verified Ground-Truth Trips',
-      value: data ? data.verified_trips : '...',
-      icon: <CheckCircle className="w-8 h-8 text-status-low" />
-    },
-    {
-      id: 'accuracy',
-      label: 'Ground-Truth Model Accuracy %',
-      value: data ? (typeof data.verification_rate === 'number' ? `${data.verification_rate}%` : data.verification_rate) : '...',
-      icon: <MapPin className="w-8 h-8 text-gov-blue-primary" />
-    }
-  ];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      {stats.map((stat) => (
-        <div key={stat.id} className="bg-white border border-gray-300 p-6 shadow-sm flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-normal text-gray-500 uppercase tracking-widest mb-2">{stat.label}</span>
-            <span className="text-2xl font-medium text-gov-blue-primary">
-              {loading ? <span className="animate-pulse w-16 h-8 bg-gray-200 block"></span> : stat.value}
-            </span>
+    <div className="font-sans mb-6">
+      <div className="bg-[#f8fafc] border border-[#d7dce6]">
+        <div className="bg-[#0a1a4a] px-4 py-2 border-b border-[#d7dce6]">
+           <h3 className="text-[13px] font-semibold text-white m-0 tracking-wide uppercase">System Summary Statistics</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#d7dce6]">
+          <div className="px-5 py-4">
+            <div className="text-[12px] font-medium text-[#5a5f6d] mb-1">Total Processed Citizen Journeys</div>
+            <div className="text-[18px] font-bold text-[#1a1a1a] tabular-nums">{MOCK_STATS[0].value}</div>
           </div>
-          <div className="bg-gray-100 p-4 rounded-sm">
-            {stat.icon}
+          <div className="px-5 py-4">
+            <div className="text-[12px] font-medium text-[#5a5f6d] mb-1">Verified Ground-Truth Trips</div>
+            <div className="text-[18px] font-bold text-[#1a1a1a] tabular-nums">{MOCK_STATS[1].value}</div>
+          </div>
+          <div className="px-5 py-4">
+            <div className="text-[12px] font-medium text-[#5a5f6d] mb-1">Ground-Truth Model Accuracy</div>
+            <div className="text-[18px] font-bold text-[#1e7e34] tabular-nums">{MOCK_STATS[3].value}</div>
           </div>
         </div>
-      ))}
+      </div>
     </div>
   );
 };
